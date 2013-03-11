@@ -2,10 +2,19 @@
     "name": "mcuadros/app-server",
     "homepage": "http://github.com/mcuadros/app-server",
     "type": "library",
+    "description": "PoC PHP Application Server",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Máximo Cuadros", 
+            "email": "mcuadros@gmail.com", 
+            "homepage": "https://github.com/mcuadros"
+        }
+    ],
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.3.0",
-        "ext-http": "*"
+        "ext-http": "*",
         "ext-gearman": "*"
     },
     "autoload": {
