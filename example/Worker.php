@@ -1,12 +1,13 @@
 <?php
-use AppServer\Worker;
+use AppServer\Client\Client;
 use AppServer\HTTP\Response;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$worker = new Worker('default');
+$worker = new Client('default');
 $worker->addServer('front-1.iunait.es', 4730);
-$worker->setFunction(function() { 
+$worker->setCallback(function($request) { 
+    var_dump('www: ' . $request->getUrl());
     $response = new Response();
     $response->setBody('test');
 
