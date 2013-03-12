@@ -4,7 +4,7 @@ use AppServer\HTTP\Response;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$worker = new Worker;
+$worker = new Worker('default');
 $worker->addServer('front-1.iunait.es', 4730);
 $worker->setFunction(function() { 
     $response = new Response();

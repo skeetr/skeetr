@@ -3,17 +3,13 @@ namespace AppServer\HTTP;
 //http://projects.ceondo.com/p/photon/source/tree/develop/src/photon/http.php
 
 class Response {
-    private $message;
     private $cookies = [];
-    private $code = 200;
-    private $version = HTTP_VERSION_1_0;
+    private $code = 404;
     private $body;
-    private $contentType = 'text/html';
-    private $server = 'AppServer 1.0 (Alpha)';
-
+ 
     public function __construct() {
-        $this->message = new \HttpMessage();
-        $this->message->setType(HTTP_MSG_RESPONSE);
+        $this->setServer('AppServer 0.0.1');
+        $this->setContentType('text/html');
     }
 
     public function setResponseCode($code) {
@@ -25,11 +21,11 @@ class Response {
     }
 
     public function setContentType($contentType) {
-        $this->contentType = $contentType;
+        $this->addHeader('Content-Type', $contentType);
     }
 
     public function setServer($server) {
-        $this->server = $server;
+        $this->addHeader('Server', $server);    
     }
 
     public function setCookie(
@@ -63,28 +59,23 @@ class Response {
     }
 
     public function addHeader($name, $string) {
-        return $this->message->addHeaders(array($name => $string), true);
+        return $this->headers[$name] = $string;
     }
 
     public function __toString() {
-        if ( $this->version == HTTP_VERSION_1_1 ) $version = '1.1';
-        else $version = '1.0';
-        $this->message->setHttpVersion($version);
-        $this->message->setResponseCode($this->code);
-
-        $this->addHeader('Content-Type', $this->contentType);
-        $this->addHeader('Server', $this->server);
-
         if ( $this->body ) {
             $this->addHeader('Content-Length', strlen($this->body));
-            $this->message->setBody($this->body);
         }
         
-        foreach($this->cookies as $name => $cookie) {
-            $this->addHeader('Set-Cookie', http_build_cookie($cookie));
-        }
+        $cookies = array();
+        foreach($this->cookies as $cookie) $cookies[] = http_build_cookie($cookie);
+        if ( $cookies ) $this->addHeader('Set-Cookie', $cookies);
         
-        return $this->message->toString();
+        return json_encode(array(
+            'code' => $this->code,  
+            'body' => $this->body,
+            'headers' => $this->headers
+        ));
     }
 }
  

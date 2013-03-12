@@ -9,37 +9,48 @@ class RequestTest extends TestCase {
         );
     }
 
-    public function testGetCookies() {
-        $cookies = $this->getRequest('GET')->getCookies();
+    public function testGetTimestamp() {
+        $this->assertSame((int)microtime(true), (int)$this->getRequest('GET')->getTimestamp());
+    }
 
-        $this->assertSame('1111', $cookies['testA']);
-        $this->assertSame('2222', $cookies['testB']);
+    public function testGetURL() {
+        $this->assertSame('/filename.html', $this->getRequest('GET')->getURL());
+    }
+
+    public function testGetMethod() {
+        $this->assertSame('GET', $this->getRequest('GET')->getMethod());
+        $this->assertSame('POST', $this->getRequest('POST')->getMethod());
+    }
+
+    public function testGetHeaders() {
+        $this->assertTrue(is_array($this->getRequest('GET')->getHeaders()));
+    }
+
+    public function testGetHeader() {
+        $this->assertSame('keep-alive', $this->getRequest('GET')->getHeader('Connection'));
+    }
+
+    public function testGetPostFields() {
+        $this->assertSame(array(
+            'foo' => 'bar',
+            'baz' => 'qux'
+        ), $this->getRequest('POST')->getPostFields());
+    }
+
+    public function testGetQueryFields() {
+        $this->assertSame(array(
+            'foo' => 'bar',
+            'baz' => 'qux'
+        ), $this->getRequest('GET')->getQueryFields());
+    }
+
+    public function testGetCookies() {
+        $cookies = $this->getRequest('POST')->getCookies();
+        $this->assertSame('value test', $cookies['cookie']);
     }
 
     public function testGetQueryData() {
         $qs = $this->getRequest('GET')->getQueryData();
-
-        $this->assertSame('arg_a=1&arg_b=2', $qs);
-    }
-    
-    public function testGetRawPostData() {
-        $post = $this->getRequest('POST')->getRawPostData();
-
-        $this->assertSame('firstname=John&lastname=Doe', $post);
-    }
-    
-    public function testGetPostFields() {
-        $post = $this->getRequest('POST')->getPostFields();
-
-        $this->assertSame('John', $post['firstname']);
-        $this->assertSame('Doe', $post['lastname']);    
-    }
-
-    public function testGetQueryFields() {
-        $get = $this->getRequest('GET')->getQueryFields();
-
-        $this->assertSame('1', $get['arg_a']);
-        $this->assertSame('2', $get['arg_b']);    
-    }
-
+        $this->assertSame('foo=bar&baz=qux', $qs);
+    }   
 }

@@ -6,30 +6,41 @@ class Request {
     private $raw;
     private $timestamp;
     private $cookies;
-    private $post;
-    private $get;
+    private $data;
 
-    public function __construct($message) {
-        $this->set($message);
+    public function __construct($json) {
+        $this->set($json);
         $this->overrideGlobals();
     }
 
     private function set($message) {
         $this->timestamp = microtime(true);
         $this->raw = $message;
-        $this->message = new \HttpMessage($this->raw);
-
-        if ( !$this->message->setRequestUrl(
-            $this->message->getHeader('X-AppServer-Uri')
-        ) ) {
-            throw new \InvalidArgumentException('Invalid X-AppServer-Uri header');   
+        if ( !$this->data = json_decode($message, true) ) {
+            throw new \UnexpectedValueException(sprintf(
+                'Unexpected message invalid JSON from nginx: "%s"', $message
+            ));
+        }
+        
+        if ( !isset($this->data['uri']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing uri');  
         }
 
-        if ( !$this->message->setRequestMethod(
-            $this->message->getHeader('X-AppServer-Method')
-        ) ) {
-            throw new \InvalidArgumentException('Invalid X-AppServer-Method header');   
-        }     
+        if ( !isset($this->data['method']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing method');  
+        }
+
+        if ( !isset($this->data['headers']) || !is_array($this->data['headers']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing headers');  
+        }
+
+        if ( !isset($this->data['post']) || !is_array($this->data['post']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing post data');  
+        }
+
+        if ( !isset($this->data['get']) || !is_array($this->data['get']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing get data');  
+        }
 
         return true; 
     }
@@ -52,21 +63,19 @@ class Request {
         $_SERVER['REQUEST_TIME'] = (int)$this->getTimestamp();
         $_SERVER['REQUEST_TIME_FLOAT'] = $this->getTimestamp();
 
-        $_SERVER['SERVER_PROTOCOL'] = 'HTTP/' . $this->getHttpVersion();
+        $_SERVER['SERVER_NAME'] = (string)$this->data['server']['name'];
+        if ( !$_SERVER['SERVER_NAME'] ) $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'];
 
-        $_SERVER['SERVER_NAME'] = (string)$this->getHeader('X-AppServer-Server-Name');
-        if ( !$_SERVER['SERVER_NAME'] ) {
-            $_SERVER['SERVER_NAME'] = (string)$this->getHeader('X-AppServer-Hostname');
-        }
 
-        $_SERVER['SERVER_ADDR'] = (string)$this->getHeader('X-AppServer-Server-Addr');
-        $_SERVER['SERVER_PORT'] = (string)$this->getHeader('X-AppServer-Server-Port');
+        $_SERVER['SERVER_ADDR'] = (string)$this->data['server']['addr'];
+        $_SERVER['SERVER_PORT'] = (string)$this->data['server']['port'];
+        $_SERVER['SERVER_PROTOCOL'] = (string)$this->data['server']['proto'];
 
-        $_SERVER['REMOTE_ADDR'] = (string)$this->getHeader('X-AppServer-Remote-Addr');
-        $_SERVER['REMOTE_PORT'] = (string)$this->getHeader('X-AppServer-Remote-Port');
+        $_SERVER['REMOTE_ADDR'] = (string)$this->data['remote']['addr'];
+        $_SERVER['REMOTE_PORT'] = (string)$this->data['remote']['port'];
 
         //TODO: Version Server
-        $_SERVER['SERVER_SOFTWARE'] = 'AppServer/0.1 (Alpha)';
+        $_SERVER['SERVER_SOFTWARE'] = 'AppServer/0.0.1';
 
         //TODO: REDIRECT_URL
         //TODO: GATEWAY_INTERFACE
@@ -74,17 +83,21 @@ class Request {
     }
 
     public function getTimestamp() { return $this->timestamp; }
-    public function getUrl() { return $this->message->getRequestUrl(); }
-    public function getMethod() { return $this->message->getRequestMethod(); }
-    public function getHttpVersion() { return 'HTTP/' . $this->message->getHttpVersion(); }
-   
-    public function getHeaders() { return $this->message->getHeaders(); }
-    public function getHeader($header) { return $this->message->getHeader($header); }
-    public function getQueryData() { return parse_url($this->getUrl(), PHP_URL_QUERY); }
-    public function getRawPostData() { return $this->message->getBody(); }
-    public function getRawRequestMessage() { return $this->raw; }
+    public function getUrl() { return $this->data['uri']; }
+    public function getMethod() { return $this->data['method']; }
+    public function getHeaders() { return $this->data['headers']; }
 
-    //TODO: Comprobar resto de parametros del objecto, como fecha de expiración 
+    public function getHeader($header) { 
+        $header = strtolower($header);
+        if ( !isset($this->data['headers'][$header]) ) return null;
+        return $this->data['headers'][$header];
+    }
+    
+    public function getPostFields() { return $this->data['post']; }
+    public function getQueryFields() { return $this->data['get']; }
+    public function getPostFiles() { throw new Exception('Not implemented'); }
+
+    public function getQueryData() { return http_build_query($this->data['get']); }
     public function getCookies() {
         if ( !$this->cookies ) {
             $this->cookies = http_parse_cookie($this->getHeader('Cookie'));
@@ -92,29 +105,4 @@ class Request {
        
        return $this->cookies->cookies;
     }
-
-    public function getPostFields() {
-        if ( !$this->post ) {
-            parse_str($this->getRawPostData(), $this->post);
-        }
-       
-       return $this->post;
-    }
-
-    public function getQueryFields() {
-        if ( !$this->get ) {
-            parse_str($this->getQueryData(), $this->get);
-        }
-       
-       return $this->get;
-    }
 }
-
-/*
-public string getContentType ( vid )
-public array getOptions ( void )
-public array getPostFiles ( void )
-public string getPutData ( void )
-public string getPutFile ( void )
-public array getSslOptions ( void )
-*/
