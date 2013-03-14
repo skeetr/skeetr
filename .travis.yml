@@ -5,7 +5,8 @@ php:
   - 5.4
 
 before_script:
-  - sudo tests/Resources/travis.sh
+  - /bin/bash ./.travis.sh
+  - phpenv rehash
   - composer --dev install
 
 script: phpunit
