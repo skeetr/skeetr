@@ -5,8 +5,7 @@ php:
   - 5.4
 
 before_script:
-  - pecl -q install pecl_http && echo "extension=http.so" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
-  - pecl -q install gearman && echo "extension=gearman.so" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
+  - sudo tests/Resources/bin/travis.sh
   - composer --dev install
 
 script: phpunit
