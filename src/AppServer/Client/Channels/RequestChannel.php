@@ -5,7 +5,6 @@ use AppServer\HTTP\Request;
 
 class RequestChannel extends Channel {
     private $callback;
-    private $channel;
 
     public function setCallback($callback) {
         $this->callback = $callback;

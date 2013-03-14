@@ -146,7 +146,7 @@ class Client {
     }
 
     protected function register() {
-        $control = new ControlChannel($this);
+        $control = new ControlChannel($this, 'control_%s');
         $control->register($this->gearman);
 
         $request = new RequestChannel($this);
