@@ -3,7 +3,7 @@ namespace AppServer\HTTP;
 //http://projects.ceondo.com/p/photon/source/tree/develop/src/photon/http.php
 
 class Response {
-    private $cookies = [];
+    private $cookies = array();
     private $code = 404;
     private $body;
  
