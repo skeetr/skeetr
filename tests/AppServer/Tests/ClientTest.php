@@ -21,7 +21,7 @@ class ClientTest extends TestCase {
         $client = $this->createClient();
 
         $host = 'test'; $port = 1111;
-        $this->assertSame([$host, $port], $client->addServer($host, $port));
+        $this->assertSame(array($host, $port), $client->addServer($host, $port));
     }
 
     public function testSetCallback() {
