@@ -10,11 +10,13 @@ class ClientTest extends TestCase {
     }
 
     public function testConstruct() {
-        $client = $this->createClient();
+        $worker = new GearmanWorkerMock();
+        $client = new ClientMock($worker, 'test', 'myId');
 
         $this->assertInstanceOf('GearmanWorker', $client->getGearman());
         $this->assertInstanceOf('AppServer\Client\Journal', $client->getJournal());
         $this->assertSame('test', $client->getChannel());
+        $this->assertSame('myId', $client->getId());
     }
 
     public function testAddServer() {
@@ -46,6 +48,11 @@ class ClientTest extends TestCase {
 
         $client->setSleepTimeOnError(5);
         $this->assertSame(5, $client->getSleepTimeOnError());
+    }
+
+    public function testGetId() {
+        $client = $this->createClient();
+        $this->assertTrue((boolean)$client->getId());
     }
 
     public function testNotifyExecution() {
