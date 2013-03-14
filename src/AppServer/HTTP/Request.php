@@ -42,6 +42,18 @@ class Request {
             throw new \InvalidArgumentException('Invalid request, missing get data');  
         }
 
+        if ( !isset($this->data['get']) || !is_array($this->data['get']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing get data');  
+        }
+
+        if ( !isset($this->data['server']) || !is_array($this->data['server']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing server data');  
+        }
+        
+        if ( !isset($this->data['server']) || !is_array($this->data['server']) ) {
+            throw new \InvalidArgumentException('Invalid request, missing server data');  
+        }
+
         return true; 
     }
 

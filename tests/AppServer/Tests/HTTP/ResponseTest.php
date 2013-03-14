@@ -17,8 +17,6 @@ class ResponseTest extends TestCase {
     public function testSetBody() {
         $response = new Response();
         $response->setBody('Test AAA');
-
-        echo((string)$response);
     }
 
 }

@@ -1,5 +1,5 @@
 <?php
-use AppServer\Client\Client;
+use AppServer\Client;
 use AppServer\HTTP\Response;
 
 require __DIR__ . '/../vendor/autoload.php';

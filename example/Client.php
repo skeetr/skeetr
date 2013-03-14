@@ -1,29 +1,27 @@
 <?php
 
-/* Creamos el objeto */
-$gmclient= new GearmanClient();
-$gmclient->addServer('front-1.iunait.es', 4730);
+# Crea el cliente gearman
+$gmc= new GearmanClient();
 
-/* Ejecuta un cliente "reverse" */
-$job_handle = $gmclient->doBackground("control", "this is a test");
+# Añade el servidor de trabajos por defecto
+$gmc->addServer('front-1.iunait.es', 4730);
 
-if ($gmclient->returnCode() != GEARMAN_SUCCESS)
+# Establece la llamada de retorno para cuando el trabajo ha terminado
+$gmc->setCompleteCallback("reverse_complete");
+
+# Añade tareas, una de ellas de baja prioridad
+$task= $gmc->addTask("control", "Hello World!", null, "1");
+$task= $gmc->addTaskLow("control", "!dlroW olleH", null, "2");
+$task= $gmc->addTask("control", "Hello World!", null, "3");
+
+if (! $gmc->runTasks())
 {
-  echo "bad return code\n";
-  exit;
+    echo "ERROR " . $gmc->error() . "\n";
+    exit;
 }
+echo "DONE\n";
 
-$done = false;
-do
+function reverse_complete($task)
 {
-   sleep(3);
-   $stat = $gmclient->jobStatus($job_handle);
-   if (!$stat[0]) // the job is known so it is not done
-      $done = true;
-   echo "Running: " . ($stat[1] ? "true" : "false") . ", numerator: " . $stat[2] . ", denomintor: " . $stat[3] . "\n";
+    echo "COMPLETE: " . $task->unique() . ", " . $task->data() . "\n";
 }
-while(!$done);
-
-echo "done!\n";
-
-?>

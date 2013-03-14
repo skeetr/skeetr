@@ -1,9 +1,12 @@
 <?php
-namespace AppServer\Client;
+namespace AppServer;
+use AppServer\Client\Journal;
+use AppServer\Client\Channel;
 use AppServer\Client\Channels\ControlChannel;
 use AppServer\Client\Channels\RequestChannel;
 
 class Client {
+    protected $registered;
     protected $sleepOnError = 5;
     protected $memoryLimit = 67108864; //64mb
     protected $worksLimit;
@@ -11,21 +14,20 @@ class Client {
     protected $channel;
     protected $gearman;
     protected $callback;
-    protected $stats;
+    protected $journal;
 
     protected $waitingSince;
 
-    public function __construct($channel = 'default') {
-        $this->stats = new Stats();
-
+    public function __construct(\GearmanWorker $worker, $channel = 'default') {
+        $this->journal = new Journal();
         $this->channel = $channel;
         
-        $this->gearman = new \GearmanWorker();
+        $this->gearman = $worker;
         $this->gearman->addOptions(GEARMAN_WORKER_NON_BLOCKING); 
     }
 
     public function addServer($host = '127.0.0.1', $port = 4730) {
-        $this->gearman->addServer($host, $port);
+        return $this->gearman->addServer($host, $port);
     }
 
     public function getCallback() { return $this->callback; }
@@ -38,20 +40,24 @@ class Client {
         $this->callback = $callback;
     }
 
-    public function getMemoryLimit() { return $this->memoryLimit; }
-    public function setMemoryLimit($bytes) {
-        $this->memoryLimit = $bytes;
-    }
-
     public function getSleepTimeOnError() { return $this->sleepTimeOnError; }
     public function setSleepTimeOnError($secs) {
         $this->sleepTimeOnError = $secs;
+    }
+
+    public function getMemoryLimit() { return $this->memoryLimit; }
+    public function setMemoryLimit($bytes) {
+        $this->memoryLimit = $bytes;
     }
 
     public function getWorksLimit() { return $this->worksLimit; }
     public function setWorksLimit($times) {
         $this->worksLimit = $times;
     }
+
+    public function getGearman() { return $this->gearman; }
+    public function getChannel() { return $this->channel; }
+    public function getJournal() { return $this->journal; }
 
     public function work() {
         print "Registering channels...\n";
@@ -60,17 +66,21 @@ class Client {
         print "Waiting for job...\n";
         $this->loop();
     }
+
+    public function notifyExecution($secs) {
+        $this->success($secs);
+    }
         
-    private function loop() {
+    protected function loop() {
         while (1) {
             $this->gearman->work();
             $this->evaluate($this->gearman->returnCode());
 
-            print (string)$this->stats . PHP_EOL;
+            print $this->journal->getJson() . PHP_EOL;
         }
     }
 
-    private function evaluate($code) {
+    protected function evaluate($code) {
         var_dump($code);
         switch ($code) {
             case GEARMAN_IO_WAIT:
@@ -93,48 +103,54 @@ class Client {
         }  
     }
 
-    private function error() { 
+    protected function error() { 
         $msg = $this->gearman->error();
         printf('Gearman error: "%s"' . PHP_EOL, $msg);
-        $this->stats->addError($msg); 
+        $this->journal->addError($msg); 
     }
 
-    private function timeout() { 
+    protected function timeout() { 
         printf('Timeout' . PHP_EOL);
-        $this->stats->addTimeout(); 
+        $this->journal->addTimeout(); 
     } 
     
-    private function success() { $this->stats->addSuccess(); }
+    protected function success($secs) {
+        printf('Executed job in %f sec(s)' . PHP_EOL, $secs);
+        $this->journal->addSuccess($secs); 
+    }
 
-    private function idle() { 
+    protected function idle() { 
         printf('Waiting for next job ...' . PHP_EOL);
 
         if ( $this->waitingSince ) {
-            $idle = $this->stats->addIdle(time() - $this->waitingSince); 
+            $idle = $this->journal->addIdle(microtime(true) - $this->waitingSince); 
         }
 
-        $this->waitingSince = time();
+        $this->waitingSince = microtime(true);
     }
 
-    private function lostConnection() {
+    protected function lostConnection() {
         printf('Connection lost, waiting %s seconds ...' . PHP_EOL, $this->sleepTimeOnError);
 
-        $this->stats->addLostConnection($this->sleepTimeOnError);
+        $this->journal->addLostConnection($this->sleepTimeOnError);
         sleep($this->sleepTimeOnError); 
         $this->idle();
     }
 
-    private function register() {
-        $control = new ControlChannel();
+    protected function register() {
+        $control = new ControlChannel($this);
         $control->register($this->gearman);
 
-        $request = new RequestChannel();
+        $request = new RequestChannel($this);
         $request->setChannel($this->channel);
         $request->setCallback($this->callback);
         $request->register($this->gearman);
+
+        $this->registered = true;
     }
 
     public function __destruct() {
+        if ( !$this->registered ) return;
         $this->gearman->unregisterAll();
     }
 }

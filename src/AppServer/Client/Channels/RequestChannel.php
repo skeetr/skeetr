@@ -3,21 +3,10 @@ namespace AppServer\Client\Channels;
 use AppServer\Client\Channel;
 use AppServer\HTTP\Request;
 
-class RequestChannel implements Channel {
-    private $channel;
-    private $timeout;
+class RequestChannel extends Channel {
     private $callback;
 
-    public function setChannel($channel) {
-        $this->channel = $channel;
-    }
-
-    public function setTimeout($timeout) {
-        $this->timeout = (int)$timeout;
-    }
-
     public function setCallback($callback) {
-
         $this->callback = $callback;
     }
 
@@ -25,18 +14,21 @@ class RequestChannel implements Channel {
         if ( !strlen($this->channel) ) {
             throw new \InvalidArgumentException('Invalid channel name.');
         }
-
+        
         if ( !is_callable($this->callback) ) {
             throw new \InvalidArgumentException('Invalid callback.');
         }
 
-        $worker->addFunction(
-            $this->channel, array($this, 'process'), $this, $this->timeout
-        );
+        return parent::register($worker);
     } 
 
     public function process(\GearmanJob $job) {
-        $request = new Request(trim($job->workload()));
-        return call_user_func($this->callback, $request);
+        $start = microtime(true);
+
+        $request = new Request($job->workload());
+        $result = call_user_func($this->callback, $request);
+
+        $this->client->notifyExecution(microtime(true) - $start);
+        return $result;
     }
 }
