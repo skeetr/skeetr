@@ -33,7 +33,6 @@ class Client {
     public function getId() { return $this->id; }
     public function setId($id) {
         $this->id = $id;
-        $this->worker->setId('3322');
     }
 
     public function addServer($host = '127.0.0.1', $port = 4730) {
