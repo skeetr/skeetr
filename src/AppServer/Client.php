@@ -21,17 +21,18 @@ class Client {
     public function __construct(\GearmanWorker $worker, $channel = 'default', $id = null) {
         $this->journal = new Journal();
         $this->channel = $channel;
-
-        if ( !$id ) $id = uniqid(null, true);
-        $this->setId($id);
         
         $this->gearman = $worker;
         $this->gearman->addOptions(GEARMAN_WORKER_NON_BLOCKING); 
+
+        if ( !$id ) $id = uniqid(null, true);
+        $this->setId($id);
     }
 
     public function getId() { return $this->id; }
     public function setId($id) {
         $this->id = $id;
+        $this->gearman->setId('3322');
     }
 
     public function addServer($host = '127.0.0.1', $port = 4730) {
