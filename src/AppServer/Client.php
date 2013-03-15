@@ -1,5 +1,6 @@
 <?php
 namespace AppServer;
+use AppServer\Gearman\Worker;
 use AppServer\Client\Journal;
 use AppServer\Client\Channel;
 use AppServer\Client\Channels\ControlChannel;
@@ -18,12 +19,12 @@ class Client {
 
     protected $waitingSince;
 
-    public function __construct(\GearmanWorker $worker, $channel = 'default', $id = null) {
+    public function __construct(Worker $worker, $channel = 'default', $id = null) {
         $this->journal = new Journal();
         $this->channel = $channel;
         
-        $this->gearman = $worker;
-        $this->gearman->addOptions(GEARMAN_WORKER_NON_BLOCKING); 
+        $this->worker = $worker;
+        $this->worker->addOptions(GEARMAN_WORKER_NON_BLOCKING); 
 
         if ( !$id ) $id = uniqid(null, true);
         $this->setId($id);
@@ -32,11 +33,11 @@ class Client {
     public function getId() { return $this->id; }
     public function setId($id) {
         $this->id = $id;
-        $this->gearman->setId('3322');
+        $this->worker->setId('3322');
     }
 
     public function addServer($host = '127.0.0.1', $port = 4730) {
-        return $this->gearman->addServer($host, $port);
+        return $this->worker->addServer($host, $port);
     }
 
     public function getCallback() { return $this->callback; }
@@ -64,7 +65,7 @@ class Client {
         $this->worksLimit = $times;
     }
 
-    public function getGearman() { return $this->gearman; }
+    public function getGearman() { return $this->worker; }
     public function getChannel() { return $this->channel; }
     public function getJournal() { return $this->journal; }
 
@@ -82,8 +83,8 @@ class Client {
         
     protected function loop() {
         while (1) {
-            $this->gearman->work();
-            $this->evaluate($this->gearman->returnCode());
+            $this->worker->work();
+            $this->evaluate($this->worker->returnCode());
 
             print $this->journal->getJson() . PHP_EOL;
         }
@@ -94,8 +95,8 @@ class Client {
         switch ($code) {
             case GEARMAN_IO_WAIT:
             case GEARMAN_NO_JOBS:
-                @$this->gearman->wait();
-                if ( $this->gearman->returnCode() == GEARMAN_NO_ACTIVE_FDS ) {
+                @$this->worker->wait();
+                if ( $this->worker->returnCode() == GEARMAN_NO_ACTIVE_FDS ) {
                     $this->lostConnection();
                 }
                 
@@ -113,7 +114,7 @@ class Client {
     }
 
     protected function error() { 
-        $msg = $this->gearman->error();
+        $msg = $this->worker->error();
         printf('Gearman error: "%s"' . PHP_EOL, $msg);
         $this->journal->addError($msg); 
     }
@@ -148,18 +149,18 @@ class Client {
 
     protected function register() {
         $control = new ControlChannel($this, 'control_%s');
-        $control->register($this->gearman);
+        $control->register($this->worker);
 
         $request = new RequestChannel($this);
         $request->setChannel($this->channel);
         $request->setCallback($this->callback);
-        $request->register($this->gearman);
+        $request->register($this->worker);
 
         $this->registered = true;
     }
 
     public function __destruct() {
         if ( !$this->registered ) return;
-        $this->gearman->unregisterAll();
+        $this->worker->unregisterAll();
     }
 }

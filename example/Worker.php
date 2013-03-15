@@ -1,13 +1,15 @@
 <?php
 use AppServer\Client;
+use AppServer\Gearman\Worker;
 use AppServer\HTTP\Response;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$gearman = new GearmanWorker;
-$worker = new Client($gearman, 'default');
-$worker->addServer('front-1.iunait.es', 4730);
-$worker->setCallback(function($request) { 
+$worker = new Worker();
+
+$client = new Client($worker, 'default');
+$client->addServer('front-1.iunait.es', 4730);
+$client->setCallback(function($request) { 
     var_dump('www: ' . $request->getUrl());
     $response = new Response();
     $response->setBody('test');
@@ -15,4 +17,4 @@ $worker->setCallback(function($request) {
     return (string)$response;
 });
 
-$worker->work();
+$client->work();

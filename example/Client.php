@@ -10,9 +10,9 @@ $gmc->addServer('front-1.iunait.es', 4730);
 $gmc->setCompleteCallback("reverse_complete");
 
 # Añade tareas, una de ellas de baja prioridad
-$task= $gmc->addTask("control", "Hello World!", null, "1");
-$task= $gmc->addTaskLow("control", "!dlroW olleH", null, "2");
-$task= $gmc->addTask("control", "Hello World!", null, "3");
+$task= $gmc->addTask("control_5142778eaba357.83264226", "Hello World!", null, "1");
+$task= $gmc->addTaskLow("control_5142778eaba357.83264226", "!dlroW olleH", null, "2");
+$task= $gmc->addTask("control_5142778eaba357.83264226", "Hello World!", null, "3");
 
 if (! $gmc->runTasks())
 {

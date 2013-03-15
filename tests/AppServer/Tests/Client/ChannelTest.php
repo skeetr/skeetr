@@ -3,9 +3,9 @@ namespace AppServer\Tests;
 use AppServer\Client;
 use AppServer\Client\Channel;
 
-use AppServer\Tests\Mocks\GearmanWorkerMock;
-use AppServer\Tests\Mocks\GearmanJobMock;
-use AppServer\Tests\Mocks\ClientMock;
+use AppServer\Mocks\Client as ClientMock;
+use AppServer\Mocks\GearmanJob;
+use AppServer\Mocks\Gearman\Worker;
 
 class ChannelTest extends TestCase {
     public function testSetChannel() {
@@ -29,7 +29,7 @@ class ChannelTest extends TestCase {
         $channel->setTimeout(3);
         $channel->setChannel('test');
 
-        $worker = new GearmanWorkerMock;
+        $worker = new Worker;
         $this->assertTrue($channel->register($worker));
     }
 }

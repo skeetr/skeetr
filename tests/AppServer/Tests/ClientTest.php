@@ -1,16 +1,16 @@
 <?php
 namespace AppServer\Tests;
 use AppServer\Client;
-use AppServer\Tests\Mocks\GearmanWorkerMock;
+use AppServer\Mocks\Gearman\Worker;
 
 class ClientTest extends TestCase {
     public function createClient() {
-        $worker = new GearmanWorkerMock();
+        $worker = new Worker();
         return new ClientMock($worker, 'test');
     }
 
     public function testConstruct() {
-        $worker = new GearmanWorkerMock();
+        $worker = new Worker();
         $client = new ClientMock($worker, 'test', 'myId');
 
         $this->assertInstanceOf('GearmanWorker', $client->getGearman());

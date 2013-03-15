@@ -1,8 +1,9 @@
 <?php
-namespace AppServer\Tests\Mocks;
+namespace AppServer\Mocks\Gearman;
+use AppServer\Gearman\Worker as WorkerMocked;
 use AppServer\Client\Channel;
 
-class GearmanWorkerMock extends \GearmanWorker {
+class Worker extends WorkerMocked {
     public function addServer($host = null, $port = null) {
         return array($host, $port);
     }
