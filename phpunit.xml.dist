@@ -2,14 +2,14 @@
 
 <phpunit bootstrap="tests/bootstrap.php" colors="true">
     <testsuites>
-        <testsuite name="AppServer/Factory Test Suite">
-            <directory>tests/AppServer/</directory>
+        <testsuite name="Skeetr Test Suite">
+            <directory>tests/Skeetr/</directory>
         </testsuite>
     </testsuites>
 
     <filter>
         <whitelist>
-            <directory suffix=".php">src/AppServer/</directory>
+            <directory suffix=".php">src/Skeetr/</directory>
         </whitelist>
     </filter>
 </phpunit>

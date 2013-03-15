@@ -1,7 +1,7 @@
 <?php
-use AppServer\Client;
-use AppServer\Gearman\Worker;
-use AppServer\HTTP\Response;
+use Skeetr\Client;
+use Skeetr\Gearman\Worker;
+use Skeetr\HTTP\Response;
 
 require __DIR__ . '/../vendor/autoload.php';
 

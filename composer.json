@@ -1,8 +1,8 @@
 {
-    "name": "mcuadros/app-server",
-    "homepage": "http://github.com/mcuadros/app-server",
+    "name": "skeetr/skeetr",
+    "homepage": "http://github.com/skeetr/skeetr",
     "type": "library",
-    "description": "PoC PHP Application Server",
+    "description": "PHP Application Server based on Gearmand + Nginx, your PHP faster than ever.",
     "license": "MIT",
     "authors": [
         {
@@ -19,7 +19,7 @@
     },
     "autoload": {
         "psr-0": {
-            "AppServer": "src/"
+            "Skeetr": "src/"
         }
     }
 }

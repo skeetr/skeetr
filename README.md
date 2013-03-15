@@ -1,6 +1,6 @@
-app-server
+Skeetr
 ==========
 
-[![Build Status](https://travis-ci.org/mcuadros/app-server.png?branch=master)](https://travis-ci.org/mcuadros/app-server)
+[![Build Status](https://travis-ci.org/skeetr/skeetr.png?branch=master)](https://travis-ci.org/skeetr/skeetr)
 
-PoC PHP Application Server 
+PHP Application Server based on Gearmand + Nginx, your PHP faster than ever. 
