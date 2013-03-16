@@ -2,12 +2,15 @@
 namespace Skeetr\Debugger;
 
 abstract class Watcher {
-    protected $files = array();
     protected $patterns = array();
 
     public function addPattern($pattern) { $this->patterns[] = $pattern; }
     public function addPatterns(array $patterns) {
         foreach($patterns as $pattern) $this->addPattern($pattern);
+    }
+
+    public function getPatterns() {
+        return $this->patterns;
     }
 
     abstract public function watch();

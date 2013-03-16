@@ -3,6 +3,8 @@ namespace Skeetr\Debugger\Watchers;
 use Skeetr\Debugger\Watcher;
 
 class RecursiveIteratorWatcher extends Watcher {
+    protected $files = array();
+
     public function watch() {
         foreach($this->files as $file => $time) {
             if ( $this->watchFile($file, $time) ) return true;
@@ -13,6 +15,8 @@ class RecursiveIteratorWatcher extends Watcher {
 
     protected function watchFile($filename, $previous) {
         $current = filemtime($filename);
+        //var_dump( $current > $previous,  $current, $previous);
+
         if ( $current > $previous ) {
             $this->files[$filename] = $current;
             return true ;
