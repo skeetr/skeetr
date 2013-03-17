@@ -1,12 +1,15 @@
 <?php
 namespace Skeetr\Mocks;
+use Skeetr\Tests\TestCase;
 use Skeetr\Client as ClientMocked;
 use Skeetr\Mocks\Gearman\Worker;
+use Skeetr\Mocks\Logger;
 
 class Client extends ClientMocked {
     public function __construct(Worker $worker = null, $channel = 'default') {
         $worker = new Worker();
-        return parent::__construct($worker, $channel);
+        $logger = new Logger();
+        return parent::__construct($logger, $worker);
     }
 
     public function getTime() { 

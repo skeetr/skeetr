@@ -38,6 +38,7 @@ abstract class Watcher {
                 $this->trackFile($file);
             }
         } 
+        
     }
 
     abstract protected function trackFile($filename);

@@ -1,5 +1,6 @@
 <?php
 namespace Skeetr;
+use Psr\Log\LoggerInterface;
 use Skeetr\Gearman\Worker;
 use Skeetr\Client\Journal;
 use Skeetr\Client\Channel;
@@ -12,22 +13,28 @@ class Client {
     protected $memoryLimit = 67108864; //64mb
     protected $worksLimit;
 
-    protected $channel;
+    protected $logger;
+    protected $channel = 'default';
     protected $gearman;
     protected $callback;
     protected $journal;
 
     protected $waitingSince;
 
-    public function __construct(Worker $worker, $channel = 'default', $id = null) {
+    public function __construct(LoggerInterface $logger, Worker $worker) {
+        $this->id = uniqid(null, true);
+
         $this->journal = new Journal();
-        $this->channel = $channel;
+        
+        $this->logger = $logger;
         
         $this->worker = $worker;
-        $this->worker->addOptions(GEARMAN_WORKER_NON_BLOCKING); 
+        $this->worker->addOptions(GEARMAN_WORKER_NON_BLOCKING);
+    }
 
-        if ( !$id ) $id = uniqid(null, true);
-        $this->setId($id);
+    public function getChannel() { return $this->channel; }
+    public function setChannel($channel) {
+        $this->channel = $channel;
     }
 
     public function getId() { return $this->id; }
@@ -65,14 +72,13 @@ class Client {
     }
 
     public function getGearman() { return $this->worker; }
-    public function getChannel() { return $this->channel; }
     public function getJournal() { return $this->journal; }
 
     public function work() {
-        print "Registering channels...\n";
+        $this->logger->notice('Registering channels...');
         $this->register();
 
-        print "Waiting for job...\n";
+        $this->logger->notice('Waiting for job...');
         $this->loop();
     }
 
@@ -90,7 +96,7 @@ class Client {
     }
 
     protected function evaluate($code) {
-        var_dump($code);
+        //var_dump($code);
         switch ($code) {
             case GEARMAN_IO_WAIT:
             case GEARMAN_NO_JOBS:
@@ -114,22 +120,23 @@ class Client {
 
     protected function error() { 
         $msg = $this->worker->error();
-        printf('Gearman error: "%s"' . PHP_EOL, $msg);
+        $this->logger->notice(sprintf('Gearman error: "%s"', $msg));
+
         $this->journal->addError($msg); 
     }
 
     protected function timeout() { 
-        printf('Timeout' . PHP_EOL);
+        $this->logger->notice('Timeout');
         $this->journal->addTimeout(); 
     } 
     
     protected function success($secs) {
-        printf('Executed job in %f sec(s)' . PHP_EOL, $secs);
+        $this->logger->notice(sprintf('Executed job in %f sec(s)', $secs));
         $this->journal->addSuccess($secs); 
     }
 
     protected function idle() { 
-        printf('Waiting for next job ...' . PHP_EOL);
+        $this->logger->notice('Waiting for next job...');
 
         if ( $this->waitingSince ) {
             $idle = $this->journal->addIdle(microtime(true) - $this->waitingSince); 
@@ -139,7 +146,7 @@ class Client {
     }
 
     protected function lostConnection() {
-        printf('Connection lost, waiting %s seconds ...' . PHP_EOL, $this->sleepTimeOnError);
+        $this->logger->notice(sprintf('Connection lost, waiting %s seconds ...', $this->sleepTimeOnError));
 
         $this->journal->addLostConnection($this->sleepTimeOnError);
         sleep($this->sleepTimeOnError); 

@@ -1,25 +1,27 @@
 <?php
 namespace Skeetr;
-use Skeetr\Debugger\Watchers\RecursiveIteratorWatcher;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\Process;
+
+use Skeetr\Debugger\Watchers\RecursiveIteratorWatcher;
 
 class Debugger {
     const FORK_MODE = 'SK_FORK_MODE';
     const CONTROL_MODE = 'SK_CONTROL_MODE';
 
-    private $process;
+    protected $logger;
+    protected $process;
+    protected $watcher;
+
+    public function __construct(LoggerInterface $logger) {
+        $this->logger = $logger;
+    }
 
     public function run() {
         if ( $this->getMode() == self::FORK_MODE ) return;
 
-        $this->watcher = new RecursiveIteratorWatcher();
-        $this->watcher->addPattern(__DIR__ . '/../../../*.php');
-        $this->watcher->track();
-
-        $this->process = new Process($this->getCommand());
-        $this->process->start();
-
-        $this->process();
+        $this->track();
+        $this->start();
     }
 
     public function getMode() {
@@ -32,7 +34,31 @@ class Debugger {
         return $this->process->isRunning();
     }
 
-    protected function process() {
+    protected function track() {
+        $this->logger->notice('Tracking for file changes ...');
+        $this->watcher = new RecursiveIteratorWatcher();
+        $this->watcher->addPattern(__DIR__ . '/../../*.php');
+        $this->watcher->track();
+    }
+
+    protected function start() {
+        $this->logger->notice('Running main process ...');
+        $this->process = new Process($this->getCommand());
+        $this->process->start();
+
+        $this->wait(); 
+    }
+
+    protected function restart() {
+        $this->logger->notice('Restarting process, files changed ...');
+
+        $this->process->stop();
+
+        $this->process = $this->process->restart();
+        $this->wait();
+    }
+
+    protected function wait() {
         while ($this->isRunning()) { 
             if ( $error = $this->getIncrementalErrorOutput() ) {
                 var_dump('----ERROR----', $error, '----ERROR----');
@@ -45,13 +71,6 @@ class Debugger {
                 break;
             }
         }
-    }
-
-    protected function restart() {
-        $this->process->stop();
-
-        $this->process = $this->process->restart();
-        $this->process();
     }
 
     protected function getIncrementalOutput() {
@@ -73,7 +92,7 @@ class Debugger {
         $args = $_SERVER['argv'];
 
         if ( substr($args[0], 0, 1) != DIRECTORY_SEPARATOR ) {
-            $args[0] = $path . DIRECTORY_SEPARATOR . $args[0];
+            $args[0] = realpath($path . DIRECTORY_SEPARATOR . $args[0]);
         }
 
         if ( $command != $_SERVER['argv'][0] ) {

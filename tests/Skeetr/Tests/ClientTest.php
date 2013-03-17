@@ -5,18 +5,25 @@ use Skeetr\Mocks\Gearman\Worker;
 
 class ClientTest extends TestCase {
     public function createClient() {
+        $logger = $this->getMock('Psr\Log\LoggerInterface');
         $worker = new Worker();
-        return new ClientMock($worker, 'test');
+        return new ClientMock($logger, $worker);
     }
 
-    public function testConstruct() {
-        $worker = new Worker();
-        $client = new ClientMock($worker, 'test', 'myId');
+    public function testSetId() {
+        $client = $this->createClient();
+        $this->assertTrue((boolean)$client->getId());
 
-        $this->assertInstanceOf('GearmanWorker', $client->getGearman());
-        $this->assertInstanceOf('Skeetr\Client\Journal', $client->getJournal());
+        $client->setId('test');
+        $this->assertSame('test', $client->getId());
+    }
+
+    public function testSetChannel() {
+        $client = $this->createClient();
+        $this->assertSame('default', $client->getChannel());
+
+        $client->setChannel('test');
         $this->assertSame('test', $client->getChannel());
-        $this->assertSame('myId', $client->getId());
     }
 
     public function testAddServer() {
@@ -50,10 +57,6 @@ class ClientTest extends TestCase {
         $this->assertSame(5, $client->getSleepTimeOnError());
     }
 
-    public function testGetId() {
-        $client = $this->createClient();
-        $this->assertTrue((boolean)$client->getId());
-    }
 
     public function testNotifyExecution() {
         $client = $this->createClient();

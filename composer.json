@@ -15,10 +15,12 @@
     "require": {
         "php": ">=5.3.0",
         "ext-http": "*",
-        "ext-gearman": "*"
+        "ext-gearman": "*",
+        "psr/log": "1.0.0"
     },
     "require-dev": {
-        "symfony/process": "v2.2.0"
+        "symfony/process": "v2.2.0",
+        "monolog/monolog": "1.4.0"
     },
     "autoload": {
         "psr-0": {
