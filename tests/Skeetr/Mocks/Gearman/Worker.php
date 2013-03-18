@@ -8,7 +8,7 @@ class Worker extends WorkerMocked {
         return array($host, $port);
     }
 
-    public function addFunction($function, Callable $callback, &$context, $timeout) {
+    public function addFunction($function, $callback, &$context, $timeout) {
         if ( $function != 'test' ) return false;
         if ( !$context instanceOf Channel ) return false;
         if ( $timeout !== 3 ) return false;

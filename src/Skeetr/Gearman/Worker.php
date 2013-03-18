@@ -30,7 +30,7 @@ class Worker {
         return $this->instance->addServer($host, $port);
     }
 
-    public function addFunction($function, Callable $callback, &$context, $timeout) {
+    public function addFunction($function, $callback, &$context, $timeout) {
         $this->registered = true;
         return $this->instance->addFunction($function, $callback, $context, $timeout);
     }

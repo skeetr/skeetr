@@ -10,8 +10,7 @@ $status = $monitor->getStatus();
 foreach ($status as $host => $functions) {
     foreach ($functions as $function => $count) {
         if ( preg_match('/control_(.*)/', $function) !== 0 ) {
-            $control[] = $function;
-            var_dump($count);
+            if ( $count['workers'] ) $control[] = $function;
         }
     }
 }

@@ -110,7 +110,7 @@ class Client {
     }
 
     protected function idle() {
-        $this->logger->notice('Waiting for job...');
+        $this->logger->debug('Waiting for job...');
         $this->journal->addIdle(); 
     }
 
