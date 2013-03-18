@@ -2,6 +2,7 @@
 namespace Skeetr\Client;
 
 class Journal {
+    private $idleSince;
     private $data = array(
         'works' => 0, 'avg' => 0, 'errors' => 0, 'timeouts' => 0, 'idle' => 0,
         'disconnected' => 0, 'since' => 0, 'error' => null
@@ -9,6 +10,7 @@ class Journal {
 
     public function __construct() {
         $this->data['since'] = time();
+        $this->idleSince = $this->data['since'];
     }
 
     public function addSuccess($time) {
@@ -32,7 +34,10 @@ class Journal {
         return $this->data['disconnected'] += $time;
     }
 
-    public function addIdle($time) {
+    public function addIdle() {
+        $time = microtime(true) - $this->idleSince; 
+        $this->idleSince = microtime(true);
+
         return $this->data['idle'] += $time;
     }
 

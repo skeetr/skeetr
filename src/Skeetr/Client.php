@@ -8,8 +8,7 @@ use Skeetr\Client\Channels\ControlChannel;
 use Skeetr\Client\Channels\RequestChannel;
 
 class Client {
-    protected $registered;
-    protected $sleepOnError = 5;
+    protected $retry = 5;
     protected $memoryLimit = 67108864; //64mb
     protected $worksLimit;
 
@@ -23,14 +22,13 @@ class Client {
 
     public function __construct(LoggerInterface $logger, Worker $worker) {
         $this->id = uniqid(null, true);
-
         $this->journal = new Journal();
-        
         $this->logger = $logger;
-        
         $this->worker = $worker;
-        $this->worker->addOptions(GEARMAN_WORKER_NON_BLOCKING);
     }
+
+    public function getWorker() { return $this->worker; }
+    public function getJournal() { return $this->journal; }
 
     public function getChannel() { return $this->channel; }
     public function setChannel($channel) {
@@ -42,23 +40,20 @@ class Client {
         $this->id = $id;
     }
 
-    public function addServer($host = '127.0.0.1', $port = 4730) {
-        return $this->worker->addServer($host, $port);
-    }
-
     public function getCallback() { return $this->callback; }
     public function setCallback($callback) {
         if ( !is_callable($callback) ) {
             throw new \InvalidArgumentException(
-                'Invalid argument $callback, must be callabe.');
+                'Invalid argument $callback, must be callabe.'
+            );
         }
 
         $this->callback = $callback;
     }
 
-    public function getSleepTimeOnError() { return $this->sleepTimeOnError; }
-    public function setSleepTimeOnError($secs) {
-        $this->sleepTimeOnError = $secs;
+    public function getRetry() { return $this->retry; }
+    public function setRetry($secs) {
+        $this->retry = $secs;
     }
 
     public function getMemoryLimit() { return $this->memoryLimit; }
@@ -71,9 +66,6 @@ class Client {
         $this->worksLimit = $times;
     }
 
-    public function getGearman() { return $this->worker; }
-    public function getJournal() { return $this->journal; }
-
     public function work() {
         $this->logger->notice('Registering channels...');
         $this->register();
@@ -82,44 +74,26 @@ class Client {
         $this->loop();
     }
 
-    public function notifyExecution($secs) {
-        $this->success($secs);
+    public function notify($status, $value = null) {
+        switch ($status) {
+            case Worker::STATUS_SUCCESS: return $this->success((float)$value);
+            case Worker::STATUS_DISCONNECTED: return $this->disconnected();
+            case Worker::STATUS_TIMEOUT: return $this->timeout();
+            case Worker::STATUS_ERROR: return $this->error();
+            case Worker::STATUS_IDLE: return $this->idle();
+        }      
     }
         
     protected function loop() {
         while (1) {
-            $this->worker->work();
-            $this->evaluate($this->worker->returnCode());
-
-            print $this->journal->getJson() . PHP_EOL;
+            if ( $status = $this->worker->work() ) {
+                $this->notify($status);
+            }
         }
     }
 
-    protected function evaluate($code) {
-        //var_dump($code);
-        switch ($code) {
-            case GEARMAN_IO_WAIT:
-            case GEARMAN_NO_JOBS:
-                @$this->worker->wait();
-                if ( $this->worker->returnCode() == GEARMAN_NO_ACTIVE_FDS ) {
-                    $this->lostConnection();
-                }
-                
-                continue;
-            case GEARMAN_TIMEOUT: 
-                $this->timeout(); 
-                break;
-            case GEARMAN_SUCCESS:
-                $this->idle();
-                break;
-            default: 
-                $this->error(); 
-                break;
-        }  
-    }
-
     protected function error() { 
-        $msg = $this->worker->error();
+        $msg = $this->worker->lastError();
         $this->logger->notice(sprintf('Gearman error: "%s"', $msg));
 
         $this->journal->addError($msg); 
@@ -135,21 +109,16 @@ class Client {
         $this->journal->addSuccess($secs); 
     }
 
-    protected function idle() { 
-        $this->logger->notice('Waiting for next job...');
-
-        if ( $this->waitingSince ) {
-            $idle = $this->journal->addIdle(microtime(true) - $this->waitingSince); 
-        }
-
-        $this->waitingSince = microtime(true);
+    protected function idle() {
+        $this->logger->notice('Waiting for job...');
+        $this->journal->addIdle(); 
     }
 
-    protected function lostConnection() {
+    protected function disconnected() {
         $this->logger->notice(sprintf('Connection lost, waiting %s seconds ...', $this->sleepTimeOnError));
 
-        $this->journal->addLostConnection($this->sleepTimeOnError);
-        sleep($this->sleepTimeOnError); 
+        $this->journal->addLostConnection($this->disconnectedSleep);
+        sleep($this->disconnectedSleep); 
         $this->idle();
     }
 
@@ -161,12 +130,5 @@ class Client {
         $request->setChannel($this->channel);
         $request->setCallback($this->callback);
         $request->register($this->worker);
-
-        $this->registered = true;
-    }
-
-    public function __destruct() {
-        if ( !$this->registered ) return;
-        $this->worker->unregisterAll();
     }
 }

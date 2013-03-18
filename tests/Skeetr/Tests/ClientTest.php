@@ -10,6 +10,16 @@ class ClientTest extends TestCase {
         return new ClientMock($logger, $worker);
     }
 
+    public function testGetJournal() {
+        $client = $this->createClient();
+        $this->assertInstanceOf('Skeetr\Client\Journal', $client->getJournal());
+    }
+
+    public function testGetWorker() {
+        $client = $this->createClient();
+        $this->assertInstanceOf('Skeetr\Gearman\Worker', $client->getWorker());
+    }
+
     public function testSetId() {
         $client = $this->createClient();
         $this->assertTrue((boolean)$client->getId());
@@ -26,11 +36,22 @@ class ClientTest extends TestCase {
         $this->assertSame('test', $client->getChannel());
     }
 
-    public function testAddServer() {
+    public function testSetRetry() {
         $client = $this->createClient();
+        $client->setRetry(5);
+        $this->assertSame(5, $client->getRetry());
+    }
 
-        $host = 'test'; $port = 1111;
-        $this->assertSame(array($host, $port), $client->addServer($host, $port));
+    public function testSetWorksLimit() {
+        $client = $this->createClient();
+        $client->setWorksLimit(5);
+        $this->assertSame(5, $client->getWorksLimit());
+    }
+
+    public function testSetMemoryLimit() {
+        $client = $this->createClient();
+        $client->setMemoryLimit(5);
+        $this->assertSame(5, $client->getMemoryLimit());
     }
 
     public function testSetCallback() {
@@ -50,44 +71,12 @@ class ClientTest extends TestCase {
         $client->setCallback(null);
     }
 
-    public function testSetSleepTimeOnError() {
+    public function testNotify() {
         $client = $this->createClient();
-
-        $client->setSleepTimeOnError(5);
-        $this->assertSame(5, $client->getSleepTimeOnError());
-    }
-
-
-    public function testNotifyExecution() {
-        $client = $this->createClient();
-        $client->notifyExecution(5);
+        $client->notify(Worker::STATUS_SUCCESS, 5);
 
         $journal = $client->getJournal();
         $this->assertSame(1, $journal->getWorks());
-    }
-
-    public function testEvaluate() {
-        $client = $this->createClient();
-        $client->setSleepTimeOnError(1);
-
-        $journal = $client->getJournal();
-
-        $client->evaluate(GEARMAN_SUCCESS);
-        $client->evaluate(GEARMAN_SUCCESS);
-        $this->assertTrue($journal->getIdle() > 0);
-
-        $client->evaluate(GEARMAN_TIMEOUT);
-        $this->assertSame(1, $journal->getTimeouts());
-
-        $client->evaluate(GEARMAN_NO_JOBS);
-        $this->assertSame(1, $journal->getLostConnection());
-
-        $client->evaluate(GEARMAN_IO_WAIT);
-        $this->assertSame(2, $journal->getLostConnection());
-
-        $client->evaluate(GEARMAN_ERRNO);
-        $this->assertSame(1, $journal->getErrors());
-        $this->assertSame('mocked error', $journal->getLastError());
     }
 }
 

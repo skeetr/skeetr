@@ -45,12 +45,13 @@ class JournalTest extends TestCase {
 
     public function testAddIdle() {
         $journal = new Journal();
-        $journal->addIdle(1);
+        $journal->addIdle();
 
-        $this->assertSame(1, $journal->getIdle());
-
-        $journal->addIdle(2);
-        $this->assertSame(3, $journal->getIdle());
+        $idle = $journal->getIdle(); 
+        $this->assertTrue($idle > 0);
+        
+        $journal->addIdle();
+        $this->assertTrue($idle < $journal->getIdle());
     }
 
     public function testGetData() {

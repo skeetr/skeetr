@@ -2,6 +2,7 @@
 namespace Skeetr\Client;
 use Skeetr\Client;
 use Skeetr\HTTP\Request;
+use Skeetr\Gearman\Worker;
 
 abstract class Channel {
     protected $client;
@@ -22,7 +23,7 @@ abstract class Channel {
         $this->timeout = (int)$timeout;
     }
 
-    public function register(\GearmanWorker $worker) {
+    public function register(Worker $worker) {
         return $worker->addFunction(
             $this->channel, array($this, 'process'), $this, $this->timeout
         );

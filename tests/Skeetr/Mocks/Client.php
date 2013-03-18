@@ -6,7 +6,7 @@ use Skeetr\Mocks\Gearman\Worker;
 use Skeetr\Mocks\Logger;
 
 class Client extends ClientMocked {
-    public function __construct(Worker $worker = null, $channel = 'default') {
+    public function __construct(LoggerInterface $logger = null, Worker $worker = null) {
         $worker = new Worker();
         $logger = new Logger();
         return parent::__construct($logger, $worker);
@@ -16,7 +16,7 @@ class Client extends ClientMocked {
         return $this->time;
     }
     
-    public function notifyExecution($secs) { 
-        $this->time = $secs;
+    public function notify($status, $value = null) { 
+        $this->time = $value;
     }
 }

@@ -2,6 +2,7 @@
 namespace Skeetr\Client\Channels;
 use Skeetr\Client\Channel;
 use Skeetr\HTTP\Request;
+use Skeetr\Gearman\Worker;
 
 class RequestChannel extends Channel {
     private $callback;
@@ -10,7 +11,7 @@ class RequestChannel extends Channel {
         $this->callback = $callback;
     }
 
-    public function register(\GearmanWorker $worker) {
+    public function register(Worker $worker) {
         if ( !strlen($this->channel) ) {
             throw new \InvalidArgumentException('Invalid channel name.');
         }
@@ -28,7 +29,7 @@ class RequestChannel extends Channel {
         $request = new Request($job->workload());
         $result = call_user_func($this->callback, $request);
 
-        $this->client->notifyExecution(microtime(true) - $start);
+        $this->client->notify(Worker::STATUS_SUCCESS, microtime(true) - $start);
         return $result;
     }
 }

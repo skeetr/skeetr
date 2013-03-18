@@ -1,21 +1,37 @@
 <?php
+use Skeetr\Gearman\Monitor;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$monitor = new Monitor;
+$monitor->addServer('front-1.iunait.es', 4730);
+
+$status = $monitor->getStatus();
+foreach ($status as $host => $functions) {
+    foreach ($functions as $function => $count) {
+        if ( preg_match('/control_(.*)/', $function) !== 0 ) {
+            $control[] = $function;
+            var_dump($count);
+        }
+    }
+}
+
 
 # Crea el cliente gearman
 $gmc= new GearmanClient();
-
 # Añade el servidor de trabajos por defecto
 $gmc->addServer('front-1.iunait.es', 4730);
 
 # Establece la llamada de retorno para cuando el trabajo ha terminado
 $gmc->setCompleteCallback("reverse_complete");
 
+foreach ($control as $function) {
+    $task= $gmc->addTask($function, "Hello World!", null, "1");
+}
 # Añade tareas, una de ellas de baja prioridad
-$task= $gmc->addTask("control_5142778eaba357.83264226", "Hello World!", null, "1");
-$task= $gmc->addTaskLow("control_5142778eaba357.83264226", "!dlroW olleH", null, "2");
-$task= $gmc->addTask("control_5142778eaba357.83264226", "Hello World!", null, "3");
 
 if (! $gmc->runTasks())
-{
+{   
     echo "ERROR " . $gmc->error() . "\n";
     exit;
 }
