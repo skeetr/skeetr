@@ -16,6 +16,7 @@
         "php": ">=5.3.0",
         "ext-http": "*",
         "ext-gearman": "*",
+        "ext-skeetr": "*",
         "psr/log": "1.0.0"
     },
     "require-dev": {
