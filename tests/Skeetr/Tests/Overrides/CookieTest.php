@@ -11,25 +11,25 @@ class CookieTest extends TestCase {
         Header::register();
         header_remove();
 
-        setcookie('foo', 'bar', strtotime('25 November 2015'));
+        setcookie('foo', 'bar', strtotime('25 Nov 2015 00:00:00 GMT'));
     
         $headers = headers_list();
         $this->assertSame(
-            'Set-Cookie: foo=bar; expires=Tue, 24 Nov 2015 23:00:00 GMT; ', $headers[0]
+            'Set-Cookie: foo=bar; expires=Wed, 25 Nov 2015 00:00:00 GMT; ', $headers[0]
         );
 
-        setcookie('foo', 'baz', strtotime('25 November 2015'));
+        setcookie('foo', 'baz', strtotime('25 November 2015 GMT'));
     
         $headers = headers_list();
         $this->assertSame(
-            'Set-Cookie: foo=baz; expires=Tue, 24 Nov 2015 23:00:00 GMT; ', $headers[0]
+            'Set-Cookie: foo=baz; expires=Wed, 25 Nov 2015 00:00:00 GMT; ', $headers[0]
         );
 
-        setcookie('bar', 'foo baz', strtotime('25 November 2015'));
+        setcookie('bar', 'foo baz', strtotime('25 Nov 2015 00:00:00 GMT'));
     
         $headers = headers_list();
         $this->assertSame(
-            'Set-Cookie: foo=baz; bar=foo%2520baz; expires=Tue, 24 Nov 2015 23:00:00 GMT; ', $headers[0]
+            'Set-Cookie: foo=baz; bar=foo%2520baz; expires=Wed, 25 Nov 2015 00:00:00 GMT; ', $headers[0]
         );
 
         Cookie::reset();
@@ -40,11 +40,11 @@ class CookieTest extends TestCase {
         Header::register();
         header_remove();
 
-        setrawcookie('foo', 'bar baz', strtotime('25 November 2015'));
+        setrawcookie('foo', 'bar baz', strtotime('25 Nov 2015 00:00:00 GMT'));
     
         $headers = headers_list();
         $this->assertSame(
-            'Set-Cookie: foo=bar+baz; expires=Tue, 24 Nov 2015 23:00:00 GMT; ', $headers[0]
+            'Set-Cookie: foo=bar+baz; expires=Wed, 25 Nov 2015 00:00:00 GMT; ', $headers[0]
         );
 
         Cookie::reset();
