@@ -31,11 +31,13 @@ class Header {
             'return Skeetr\Overrides\Header::headers_sent($file, $line);' 
         );
 
-        skeetr_override_function(
-            'header_register_callback', 
-            '$callback',
-            'return Skeetr\Overrides\Header::header_register_callback($callback);' 
-        );
+        if ( function_exists('header_register_callback') ) {
+            skeetr_override_function(
+                'header_register_callback', 
+                '$callback',
+                'return Skeetr\Overrides\Header::header_register_callback($callback);' 
+            );
+        }
     }
 
     static public function header($string, $replace = true, $http_response_code = null) {

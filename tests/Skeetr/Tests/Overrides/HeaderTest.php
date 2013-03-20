@@ -61,6 +61,8 @@ class HeaderTest extends TestCase {
 
 
     public function testHeaderRegisterCallback() {
+        if ( !function_exists('header_register_callback') ) return true;
+        
         $called = 0;
         header_register_callback(function() use (&$called) {
             $called = 1;
