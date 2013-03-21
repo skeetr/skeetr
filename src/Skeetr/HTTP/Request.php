@@ -92,6 +92,8 @@ class Request {
         //TODO: REDIRECT_URL
         //TODO: GATEWAY_INTERFACE
         //TODO: REDIRECT_STATUS
+
+        $_COOKIE = $this->getCookies();
     }
 
     public function getTimestamp() { return $this->timestamp; }

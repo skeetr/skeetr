@@ -153,6 +153,10 @@ class Session {
 
     static public function session_start() {
         self::reset();
+        if ( isset($_COOKIE[session_name()]) ) {
+            self::$id = $_COOKIE[session_name()];
+        }
+
         self::$started = true;
         if ( !self::$id ) self::$id = uniqid(null, true);
 
@@ -264,5 +268,9 @@ class Session {
         }
 
         return true;
+    }
+
+    static public function configure(Response $response) {
+        self::session_write_close();
     }
 }

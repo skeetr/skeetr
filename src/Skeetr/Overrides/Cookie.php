@@ -53,4 +53,8 @@ class Cookie {
 
         Header::header(sprintf('Set-Cookie: %s', $cookie));
     }
+
+    static public function configure(Response $response) {
+
+    }
 }

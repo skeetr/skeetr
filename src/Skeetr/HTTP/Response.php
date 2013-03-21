@@ -17,6 +17,7 @@ class Response {
         $this->code = (int)$code;
     }
 
+    public function getBody() { return $this->body; }
     public function setBody($body) {
         $this->body = $body;
     }
@@ -77,8 +78,13 @@ class Response {
         foreach($this->headers as $headers) {
             $results = array_merge($results, $headers);
         }
+        
+        $output = array();
+        foreach($results as $header) {
+            $output[$header[0]] = $header[1];
+        }
 
-        return $results;
+        return $output;
     }
 
     public function __toString() {
@@ -91,9 +97,9 @@ class Response {
         if ( $cookies ) $this->setHeader(sprintf('Set-Cookie: %s', $cookies));
         
         return json_encode(array(
-            'code' => $this->code,  
-            'body' => $this->body,
-            'headers' => $this->headers
+            'code' => $this->getResponseCode(),  
+            'body' => $this->getBody(),
+            'headers' => $this->getHeaders()
         ));
     }
 }
