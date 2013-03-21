@@ -4,27 +4,22 @@ use Skeetr\Tests\TestCase;
 use Skeetr\Overrides\Cookie;
 use Skeetr\Overrides\Header;
 use Skeetr\Overrides\Session;
+use Skeetr\HTTP\Response;
 
 class SessionTest extends TestCase {
-    public function register() {
-        Cookie::register();
-        Header::register();
-        Session::register();
-        //header_remove(); 
-    }
-
     public function testSessionId() {
-        $this->register();
-
         $this->assertSame(null, session_id());
 
         session_start();
         $this->assertTrue(strlen(session_id()) > 0);
+
+        $response = new Response();
+        Header::configure($response);
+
+        $headers = $response->getHeaders();
     }
 
     public function testSessionStatus() {
-        $this->register();
-
         $this->assertSame(PHP_SESSION_NONE, session_status());
 
         session_start();
@@ -32,8 +27,6 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionWriteClose() {
-        $this->register();
-
         session_start();
         $_SESSION['foo'] = 'bar';
 
@@ -46,8 +39,6 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionDestroy() {
-        $this->register();
-
         $this->assertFalse(session_destroy());
 
         $_SESSION['foo'] = 'bar';
@@ -62,8 +53,6 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionEncode() {
-        $this->register();
-
         $_SESSION['foo'] = 'bar';
 
         $data = unserialize(session_encode());
@@ -71,15 +60,11 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionDecode() {
-        $this->register();
-
         session_decode('a:1:{s:3:"foo";s:3:"bar";}');
         $this->assertSame('bar', $_SESSION['foo']); 
     }
 
     public function testSessionGetCookieParams() {
-        $this->register();
-
         $expect = Array (
             'lifetime' => 0,
             'path' => '/',
@@ -92,8 +77,6 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionCacheLimiter() {
-        $this->register();
-
         ini_set('session.cache_limiter', 'nocache');
         $this->assertSame('nocache', session_cache_limiter()); 
 
@@ -102,8 +85,6 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionCacheExpire() {
-        $this->register();
-
         ini_set('session.cache_expire', '180');
         $this->assertSame(180, session_cache_expire()); 
 
@@ -112,8 +93,6 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionRegenerateId() {
-        $this->register();
-
         session_start();
         $old = session_id();
         session_regenerate_id();

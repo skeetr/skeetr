@@ -1,5 +1,6 @@
 <?php
 namespace Skeetr\Overrides;
+use Skeetr\HTTP\Response;
 
 
 /*
@@ -143,7 +144,7 @@ class Session {
         self::reset();
     }
 
-    static private function reset() {
+    static public function reset() {
         self::$started = null;
         self::$file = null;
         self::$id = null;
@@ -163,6 +164,13 @@ class Session {
             $data = file_get_contents(self::$file);
             session_decode($data);
         }
+
+        $config = self::session_get_cookie_params();
+        Cookie::setcookie(
+            session_name(), self::session_id(),
+            $config['lifetime'], $config['path'], $config['domain'], 
+            $config['secure'], $config['httponly']
+        );
 
         return true;
     }

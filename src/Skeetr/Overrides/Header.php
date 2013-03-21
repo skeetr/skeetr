@@ -1,9 +1,10 @@
 <?php
 namespace Skeetr\Overrides;
+use Skeetr\HTTP\Response;
 
 class Header {
-    static private $headers = array();
-    static private $code = 200;
+    static private $headers;
+    static private $code;
     static private $callback;
 
     static public function register() {
@@ -38,6 +39,14 @@ class Header {
                 'return Skeetr\Overrides\Header::header_register_callback($callback);' 
             );
         }
+
+        self::reset();
+    }
+
+    static public function reset() {
+        self::$headers = array();
+        self::$code = 200;
+        self::$callback;
     }
 
     static public function header($string, $replace = true, $http_response_code = null) {
@@ -77,12 +86,15 @@ class Header {
         return null;
     }
 
-    static public function code() {
-        return self::$code;
-    }
-
-    static public function headers() {
+    static public function configure(Response $response) {
         if ( self::$callback ) call_user_func(self::$callback);
-        return self::headers_list();
+
+        $response->setResponseCode(self::$code);
+
+        foreach (self::headers_list() as $header) {
+            $response->setHeader($header, false);
+        }
+
+        self::reset();
     }
 }
