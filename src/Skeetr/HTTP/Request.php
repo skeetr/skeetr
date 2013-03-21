@@ -94,6 +94,9 @@ class Request {
         //TODO: REDIRECT_STATUS
 
         $_COOKIE = $this->getCookies();
+        $_GET = $this->getQueryFields();
+        $_POST = $this->getPostFields();
+        $_REQUEST = array_merge($_GET, $_POST);
     }
 
     public function getTimestamp() { return $this->timestamp; }

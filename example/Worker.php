@@ -27,11 +27,9 @@ $client->setCallback(function($request) use ($logger) {
     if ( !isset($_SESSION['count']) ) $_SESSION['count'] = 0;
     $_SESSION['count']++;
 
-    var_dump('www: ' . $request->getUrl());
     $response = new Response();
     $response->setContentType('text/html');
     $response->setBody('test' . $_SESSION['count']);
-
 
     Session::configure($response);
     Cookie::configure($response);
