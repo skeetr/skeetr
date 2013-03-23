@@ -148,17 +148,25 @@ class Session {
         self::$started = null;
         self::$file = null;
         self::$id = null;
-        $_SESSION = array();
+        self::session_unset();
     }
 
     static public function session_start() {
         self::reset();
+        self::$started = true;
+
         if ( isset($_COOKIE[session_name()]) ) {
             self::$id = $_COOKIE[session_name()];
-        }
+        } else {
+            self::$id = uniqid();
 
-        self::$started = true;
-        if ( !self::$id ) self::$id = uniqid(null, true);
+            $config = self::session_get_cookie_params();
+            Cookie::setcookie(
+                session_name(), self::$id,
+                $config['lifetime'], $config['path'], $config['domain'], 
+                $config['secure'], $config['httponly']
+            );
+        }
 
         if ( !$savePath = session_save_path() ) $savePath = sys_get_temp_dir();
         if ( !is_dir($savePath) ) mkdir($savePath, 0777);
@@ -169,13 +177,6 @@ class Session {
             session_decode($data);
         }
 
-        $config = self::session_get_cookie_params();
-        Cookie::setcookie(
-            session_name(), self::session_id(),
-            $config['lifetime'], $config['path'], $config['domain'], 
-            $config['secure'], $config['httponly']
-        );
-
         return true;
     }
 
@@ -185,11 +186,14 @@ class Session {
     }
 
     static public function session_write_close() {
+        var_dump(self::$started, self::session_encode());
         if ( !self::$started ) return;
         file_put_contents(self::$file, self::session_encode());
     }
 
     static public function session_unset() {
+        if ( !isset($_SESSION) ) return false;
+
         foreach( $_SESSION as $key => $value ) {
             unset($_SESSION[$key]);
         }

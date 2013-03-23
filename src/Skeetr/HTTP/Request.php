@@ -93,10 +93,25 @@ class Request {
         //TODO: GATEWAY_INTERFACE
         //TODO: REDIRECT_STATUS
 
-        $_COOKIE = $this->getCookies();
-        $_GET = $this->getQueryFields();
-        $_POST = $this->getPostFields();
-        $_REQUEST = array_merge($_GET, $_POST);
+        foreach ( $_GET as $key => $value ) unset($_GET[$key]); 
+        foreach ( $this->getQueryFields() as $key => $value ) {
+            $_GET[$key] = $value;
+        }
+
+        foreach ( $_POST as $key => $value ) unset($_POST[$key]); 
+        foreach ( $this->getPostFields() as $key => $value ) {
+            $_POST[$key] = $value;
+        }
+
+        foreach ( $_COOKIE as $key => $value ) unset($_COOKIE[$key]); 
+        foreach ( $this->getCookies() as $key => $value ) {
+            $_COOKIE[$key] = $value;
+        }
+
+        foreach ( $_REQUEST as $key => $value ) unset($_REQUEST[$key]); 
+        foreach ( array_merge($_GET, $_POST) as $key => $value ) {
+            $_REQUEST[$key] = $value;
+        }     
     }
 
     public function getTimestamp() { return $this->timestamp; }
