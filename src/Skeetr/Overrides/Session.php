@@ -61,6 +61,7 @@ class Session {
     static private $file;
     static private $id;
     static private $limiter;
+    static private $handler;
 
     static public function register() {
         skeetr_override_function(
@@ -141,6 +142,12 @@ class Session {
             'return Skeetr\Overrides\Session::session_regenerate_id($delete_old_session);' 
         );
 
+        skeetr_override_function(
+            'session_set_save_handler', 
+            '$sessionhandler, $register_shutdown = true',
+            'return Skeetr\Overrides\Session::session_set_save_handler($sessionhandler, $register_shutdown);' 
+        );
+        
         self::reset();
     }
 
@@ -149,10 +156,13 @@ class Session {
         self::$file = null;
         self::$id = null;
         self::session_unset();
+
+        $_SESSION = array();
     }
 
     static public function session_start() {
-        self::reset();
+        if ( self::$started ) trigger_error('Session already started', E_USER_WARNING);
+
         self::$started = true;
 
         if ( isset($_COOKIE[session_name()]) ) {
@@ -172,6 +182,12 @@ class Session {
         if ( !is_dir($savePath) ) mkdir($savePath, 0777);
 
         self::$file = sprintf('%s/sess_%s', $savePath, self::$id);
+
+        if ( self::$handler ) {
+            self::$handler->open($savePath, session_name());
+            self::$handler->read(self::$id);
+        }
+
         if ( file_exists(self::$file) ) {
             $data = file_get_contents(self::$file);
             session_decode($data);
@@ -180,14 +196,33 @@ class Session {
         return true;
     }
 
+    static public function session_regenerate_id($delete_old_session = false) {
+        if ( !self::$started ) return false;
+
+        if ( $delete_old_session ) self::session_destroy();
+        else {
+            self::$started = null;
+            self::$file = null;
+            self::$id = null;
+        }
+
+        if ( isset($_COOKIE[session_name()]) ) unset($_COOKIE[session_name()]);
+        return self::session_start();
+    }
+
     static public function session_id($id = null) {
         if ( $id ) self::$id = $id;
         return self::$id; 
     }
 
     static public function session_write_close() {
-        var_dump(self::$started, self::session_encode());
         if ( !self::$started ) return;
+
+        if ( self::$handler ) {
+            self::$handler->write(self::$id, self::session_encode());
+            self::$handler->close();
+        }
+
         file_put_contents(self::$file, self::session_encode());
     }
 
@@ -204,8 +239,10 @@ class Session {
         return PHP_SESSION_NONE;
     }
 
-    static public function session_destroy() {
+    static public function session_destroy() {        
         if ( !self::$started ) return false;
+        self::reset();
+
         if ( !file_exists(self::$file) ) return false;
         return unlink(self::$file);
     }
@@ -256,11 +293,8 @@ class Session {
         return (int)$new_cache_expire;
     }
 
-    static public function session_regenerate_id($delete_old_session = false) {
-        if ( !self::$started ) return false;
-
-        if ( $delete_old_session ) self::session_destroy();
-        return self::session_start();
+    static public function session_set_save_handler($sessionhandler, $register_shutdown = true) {
+        self::$handler = $sessionhandler;
     }
 
     public function gc($maxlifetime)
@@ -276,5 +310,6 @@ class Session {
 
     static public function configure(Response $response) {
         self::session_write_close();
+        self::reset();
     }
 }
