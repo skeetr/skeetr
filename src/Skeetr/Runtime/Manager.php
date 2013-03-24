@@ -1,51 +1,75 @@
 <?php
 namespace Skeetr\Runtime;
-use Skeetr\Runtime\OverrideInterface;
 
 class Manager {
-    static private $overrides = array();
+    static private $registered = array();
+    static private $functions = array();
 
-    static public function load($className) {
-        if ( self::loaded($className) ) {
-            throw new \RuntimeException('Override already loaded');
+    static public function register($class) {
+        if ( self::registered($class) ) {
+            throw new \InvalidArgumentException('Override already loaded');
         }
 
-        $class = new \ReflectionClass($className);
-        if ( !$class->implementsInterface('\Skeetr\Runtime\OverrideInterface') ) {
-            throw new \RuntimeException(
-                sprintf('%s not implements OverrideInterface', $className)
+        $reflection = new \ReflectionClass($class);
+        if ( !$reflection->implementsInterface('\Skeetr\Runtime\OverrideInterface') ) {
+            throw new \InvalidArgumentException(
+                sprintf('%s not implements OverrideInterface', $class)
             );
         }
 
-        foreach( $class->getMethods(\ReflectionMethod::IS_FINAL) as $method) {
+        foreach( $reflection->getMethods(\ReflectionMethod::IS_FINAL) as $method) {
             $function = $method->getName();
             if ( !function_exists($function) ) continue;
 
-            $call = self::getCall($className, $function);
+            $call = self::getCall($class, $function);
             if ( !skeetr_override_function(
                 $call['function'], 
                 $call['args'], 
                 $call['code']
             )) {
                 throw new \RuntimeException(
-                    sprintf('Unable to ovveride builtin function %s', $call['function'])
+                    sprintf('Unable to override builtin function %s', $call['function'])
                 );
             }
+
+            $functions[$function] = 1;
         }
         
-        self::$overrides[] = $className;
+        if ( count($functions) == 0 ) {
+            throw new \InvalidArgumentException(
+                'This class not contains any override function'
+            );
+        }
+
+        $class::reset();
+
+        self::$functions = array_merge(self::$functions, $functions);
+        self::$registered[$class] = 1;
     }
 
-    static public function loaded($className) {
-        if ( isset(self::$overrides[$className]) ) return true;
+    static public function overrided($function) {
+         if ( isset(self::$functions[$function]) ) return true;
+        return false;       
+    }
+
+    static public function registered($class) {
+        if ( isset(self::$registered[$class]) ) return true;
         return false;
     }
 
-    static protected function getCall($className, $method) {
+    static public function reset($class = null) {
+        if ( $class && isset(self::$registered[$class]) ) return $class::reset();
+        else if ( $class ) return false;
+
+        foreach(self::$registered as $class => $registered) $class::reset();
+        return true;
+    }
+
+    static protected function getCall($class, $method) {
         $call = array();
         $args = array();
 
-        foreach(self::readMethod($className, $method) as $arg) {
+        foreach(self::readMethod($class, $method) as $arg) {
             $call[] = sprintf('$%s', $arg['name']);
             if ( !isset($arg['default']) ) $args[] = sprintf('$%s', $arg['name']);
             else $args[] = sprintf('$%s = %s', $arg['name'], $arg['default']);
@@ -54,13 +78,13 @@ class Manager {
         return array(
             'function' => $method,
             'args' => implode(', ', $args),
-            'code' => sprintf('return %s::%s(%s);', $className, $method, implode(', ', $call))
+            'code' => sprintf('return %s::%s(%s);', $class, $method, implode(', ', $call))
         );
     }
 
-    static protected function readMethod($className, $method) {
-        $class = new \ReflectionClass($className);
-        $method = $class->getMethod($method);
+    static protected function readMethod($class, $method) {
+        $reflection = new \ReflectionClass($class);
+        $method = $reflection->getMethod($method);
 
         $args = array();
         foreach( $method->getParameters() as $param ) {

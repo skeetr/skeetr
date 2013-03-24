@@ -7,6 +7,15 @@ class Cookie implements OverrideInterface {
     static $values;
     static $secure;
 
+    static public function reset() {
+        self::$values = array();
+        self::$secure = false;
+    }
+
+    static public function configure(Response $response) {
+
+    }
+    
     final static public function setcookie(
         $name, $value, $expire = 0, $path = null, 
         $domain = null, $secure = false, $httponly = false
@@ -34,12 +43,4 @@ class Cookie implements OverrideInterface {
         Header::header(sprintf('Set-Cookie: %s', $cookie));
     }
 
-    static public function reset() {
-        self::$values = array();
-        self::$secure = false;
-    }
-
-    static public function configure(Response $response) {
-
-    }
 }

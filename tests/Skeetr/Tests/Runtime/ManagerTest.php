@@ -5,13 +5,49 @@ use Skeetr\Runtime\Manager;
 use Skeetr\Runtime\OverrideInterface;
 
 class ManagerTest extends TestCase {
-    public function testLoad() {
-        Manager::load('\Skeetr\Tests\Runtime\ExampleOverride');
+    public function testRegister() {
+        Manager::register('\Skeetr\Tests\Runtime\ExampleOverride');
 
         $function = new \ReflectionFunction('natcasesort');
         $this->assertFalse($function->isInternal());
 
         $this->assertSame('foo', natcasesort('foo'));
+        $this->assertTrue(Manager::overrided('natcasesort'));
+        $this->assertSame(1, ExampleOverride::$test);
+
+        ExampleOverride::$test = 0;
+        Manager::reset();
+
+        $this->assertSame(1, ExampleOverride::$test);
+   
+        ExampleOverride::$test = 0;
+        Manager::reset('\Skeetr\Tests\Runtime\ExampleOverride');
+
+        $this->assertSame(1, ExampleOverride::$test);
+
+        $this->assertTrue(false === Manager::reset('NotExists'));
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testRegisterTwice() {
+        Manager::register('\Skeetr\Runtime\Overrides\Cookie');
+        Manager::register('\Skeetr\Runtime\Overrides\Cookie');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testRegisterOther() {
+        Manager::register('\Skeetr\Tests\TestCase');
+    }
+
+    /**
+     * @expectedException ReflectionException
+     */
+    public function testRegisterMissing() {
+        Manager::register('\Skeetr\Runtime\Overrides\Missing');
     }
 
     public function testReadMethod() {
@@ -54,6 +90,12 @@ class ManagerMock extends Manager {
 
 
 class ExampleOverride implements OverrideInterface {
+    static public $test = 0;
+
+    static public function reset() {
+        self::$test = 1;
+    }
+
     final static function natcasesort($mandatory, $optionalNull = null, $optionalString = '2') {
         return $mandatory;
     }
