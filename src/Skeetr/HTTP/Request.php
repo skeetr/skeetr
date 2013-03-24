@@ -97,6 +97,7 @@ class Request {
         $_GET = $this->getQueryFields();
         $_POST = $this->getPostFields();
         $_REQUEST = array_merge($_GET, $_POST);
+        $_FILES = array();
     }
 
     public function getTimestamp() { return $this->timestamp; }

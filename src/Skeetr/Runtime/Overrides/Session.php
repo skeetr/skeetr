@@ -1,5 +1,6 @@
 <?php
-namespace Skeetr\Overrides;
+namespace Skeetr\Runtime\Overrides;
+use Skeetr\Runtime\OverrideInterface;
 use Skeetr\HTTP\Response;
 
 

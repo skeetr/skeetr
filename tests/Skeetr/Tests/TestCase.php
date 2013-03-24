@@ -6,9 +6,10 @@ use Skeetr\Overrides\Session;
 
 class TestCase extends \PHPUnit_Framework_TestCase {   
     public function setUp() {
-        Header::reset();
+        /*Header::reset();
         Cookie::reset();
         Session::reset();
+        */
     }
 
     public static function getResource($path) {
