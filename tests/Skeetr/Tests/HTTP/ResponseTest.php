@@ -3,6 +3,17 @@ namespace Skeetr\Tests;
 use Skeetr\HTTP\Response;
 
 class ResponseTest extends TestCase {
+    public function testCreateFromRuntime() {
+        setcookie('foo', 'bar');
+        header('Location: http://www.bar.com/');
+
+        $response = Response::createFromRuntime();
+
+        $headers = $response->getHeaders();
+        $this->assertTrue(isset($headers['Location']));
+        $this->assertSame(302, $response->getResponseCode());
+    }
+
     public function testSetHeader() {
         $response = new Response();
         $response->setHeader('Location: http://www.bar.com/');

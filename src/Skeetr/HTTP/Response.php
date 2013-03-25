@@ -1,5 +1,6 @@
 <?php
 namespace Skeetr\HTTP;
+use Skeetr\Runtime\Manager;
 
 class Response {
     private $cookies = array();
@@ -10,6 +11,19 @@ class Response {
     public function __construct() {
         $this->setServer('Skeetr 0.0.1');
         $this->setContentType('text/html');
+    }
+
+    public static function createFromRuntime() {
+        $response = new static();
+
+        $values = Manager::values();
+        $response->setResponseCode($values['header']['code']);
+
+        foreach($values['header']['list'] as $headers) {
+            foreach($headers as $header) $response->setHeader($header, true);
+        }
+
+        return $response;
     }
 
     public function getResponseCode() { return $this->code; }
@@ -68,6 +82,7 @@ class Response {
         return true;
     }
 
+    //TODO: Suport multiple headers from the same name
     public function getHeader($name) { 
         if ( !isset($this->headers[$name]) ) return false;
         return $this->headers[$name]; 

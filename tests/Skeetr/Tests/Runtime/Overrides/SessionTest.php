@@ -1,6 +1,7 @@
 <?php
 namespace Skeetr\Tests\Runtime\Overrides;
 use Skeetr\Tests\TestCase;
+use Skeetr\Runtime\Manager;
 
 class SessionTest extends TestCase {
     public function testSessionId() {
@@ -11,6 +12,8 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionStatus() {
+        if ( !Manager::overrided('session_status') ) return false;
+        
         $this->assertSame(PHP_SESSION_NONE, session_status());
 
         session_start();
