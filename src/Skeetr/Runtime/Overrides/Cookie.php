@@ -1,21 +1,18 @@
 <?php
 namespace Skeetr\Runtime\Overrides;
-use Skeetr\Runtime\OverrideInterface;
+use Skeetr\Runtime\Override;
 use Skeetr\HTTP\Response;
 
-class Cookie implements OverrideInterface {
-    static $values;
-    static $secure;
-
-    static public function reset() {
-        self::$values = array();
-        self::$secure = false;
-    }
-
-    static public function configure(Response $response) {
-
-    }
-    
+/**
+ * PHP impementation of setcookie and setrawcookie functions
+ * 
+ * Built-in functions:
+ * [+] setcookie — Send a cookie
+ * [+] setrawcookie — Send a cookie without urlencoding the cookie value
+ *
+ * [+] = Implemented [-] = Original 
+ */
+class Cookie extends Override {
     final static public function setcookie(
         $name, $value, $expire = 0, $path = null, 
         $domain = null, $secure = false, $httponly = false
@@ -30,17 +27,13 @@ class Cookie implements OverrideInterface {
         $name, $value, $expire = 0, $path = null, 
         $domain = null, $secure = false, $httponly = false
     ) {
-        self::$values[$name] = $value;
-        self::$secure = $secure;
-
         $cookie = http_build_cookie(array(
-            'cookies' => self::$values,
+            'cookies' => array($name => $value),
             'expires' => $expire,
             'path' => $path, 
             'domain' => $domain
         ));
 
-        Header::header(sprintf('Set-Cookie: %s', $cookie));
+        Header::header(sprintf('Set-Cookie: %s', $cookie), false);
     }
-
 }

@@ -2,30 +2,42 @@
 namespace Skeetr\Tests\Runtime;
 use Skeetr\Tests\TestCase;
 use Skeetr\Runtime\Manager;
-use Skeetr\Runtime\OverrideInterface;
+use Skeetr\Runtime\Override;
 
 class ManagerTest extends TestCase {
-    public function testRegister() {
-        Manager::register('\Skeetr\Tests\Runtime\ExampleOverride');
+    public function testAuto() {
+        ManagerMock::auto();
+
+        $this->assertSame(3, count(ManagerMock::$registered));
+        $this->assertTrue(class_exists(key(ManagerMock::$registered)));   
+    }
+
+    public function testRegisterResetAndValues() {
+        Manager::register('\Skeetr\Tests\Runtime\Example');
 
         $function = new \ReflectionFunction('natcasesort');
         $this->assertFalse($function->isInternal());
 
         $this->assertSame('foo', natcasesort('foo'));
         $this->assertTrue(Manager::overrided('natcasesort'));
-        $this->assertSame(1, ExampleOverride::$test);
+        $this->assertSame(1, Example::$test);
 
-        ExampleOverride::$test = 0;
+        Example::$test = 0;
         Manager::reset();
 
-        $this->assertSame(1, ExampleOverride::$test);
+        $this->assertSame(1, Example::$test);
    
-        ExampleOverride::$test = 0;
-        Manager::reset('\Skeetr\Tests\Runtime\ExampleOverride');
+        Example::$test = 0;
+        Manager::reset('\Skeetr\Tests\Runtime\Example');
 
-        $this->assertSame(1, ExampleOverride::$test);
-
+        $this->assertSame(1, Example::$test);
         $this->assertTrue(false === Manager::reset('NotExists'));
+
+        $expected = array('example' => array('test' => 1));
+        $this->assertSame($expected, Manager::values('\Skeetr\Tests\Runtime\Example'));
+        
+        $values = Manager::values('\Skeetr\Tests\Runtime\Example');
+        $this->assertSame(1, $values['example']['test']);
     }
 
     /**
@@ -52,7 +64,7 @@ class ManagerTest extends TestCase {
 
     public function testReadMethod() {
         $args = ManagerMock::readMethod(
-            '\Skeetr\Tests\Runtime\ExampleOverride', 'natcasesort'
+            '\Skeetr\Tests\Runtime\Example', 'natcasesort'
         );
 
         $this->assertSame('mandatory', $args[0]['name']);
@@ -64,7 +76,7 @@ class ManagerTest extends TestCase {
 
     public function testGetCall() {
         $call = ManagerMock::getCall(
-            '\Skeetr\Tests\Runtime\ExampleOverride', 'natcasesort'
+            '\Skeetr\Tests\Runtime\Example', 'natcasesort'
         );
 
         $this->assertSame('natcasesort', $call['function']);
@@ -72,13 +84,23 @@ class ManagerTest extends TestCase {
         $args = '$mandatory, $optionalNull = NULL, $optionalString = \'2\'';
         $this->assertSame($args, $call['args']);
 
-        $code = 'return \Skeetr\Tests\Runtime\ExampleOverride::natcasesort($mandatory, $optionalNull, $optionalString);';
+        $code = 'return \Skeetr\Tests\Runtime\Example::natcasesort($mandatory, $optionalNull, $optionalString);';
         $this->assertSame($code, $call['code']);
-
     }
 }
 
 class ManagerMock extends Manager {
+    static public $registered = array();
+
+    static public function register($class) {
+        if ( self::registered($class) ) {
+            throw new \InvalidArgumentException('Override already loaded');
+        }
+
+        static::$registered[$class] = 1;
+        return;
+    }
+
     static public function readMethod($class, $method) {
         return parent::readMethod($class, $method);
     }
@@ -89,7 +111,7 @@ class ManagerMock extends Manager {
 }
 
 
-class ExampleOverride implements OverrideInterface {
+class Example extends Override {
     static public $test = 0;
 
     static public function reset() {

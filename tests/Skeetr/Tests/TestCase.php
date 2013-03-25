@@ -1,15 +1,10 @@
 <?php
 namespace Skeetr\Tests;
-use Skeetr\Overrides\Cookie;
-use Skeetr\Overrides\Header;
-use Skeetr\Overrides\Session;
+use Skeetr\Runtime\Manager;
 
 class TestCase extends \PHPUnit_Framework_TestCase {   
     public function setUp() {
-        /*Header::reset();
-        Cookie::reset();
-        Session::reset();
-        */
+        Manager::reset();
     }
 
     public static function getResource($path) {
