@@ -1,63 +1,110 @@
 <?php
 namespace Skeetr\HTTP;
-//http://us.php.net/manual/en/http.constants.php
+
 class Request {
-    private $message;
-    private $raw;
     private $timestamp;
-    private $cookies;
-    private $data;
+    private $url;
+    private $method;
+    private $headers = array();
+    private $post = array();
+    private $get = array();
+    private $server = array();
+    private $remote = array();
+    private $cookies = array();
 
-    public function __construct($json) {
-        $this->set($json);
-        $this->overrideGlobals();
-    }
-
-    private function set($message) {
-        $this->timestamp = microtime(true);
-        $this->raw = $message;
-        if ( !$this->data = json_decode($message, true) ) {
+    public function fromJSON($json) {
+        if ( !$data = json_decode($json, true) ) {
             throw new \UnexpectedValueException(sprintf(
                 'Unexpected message invalid JSON from nginx: "%s"', $message
             ));
         }
+
+        $this->setTimestamp(microtime(true));
         
-        if ( !isset($this->data['uri']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing uri');  
+        if ( isset($data['uri']) ) $this->setUrl($data['uri']);
+        if ( isset($data['method']) ) $this->setMethod($data['method']);
+
+        if ( isset($data['headers']) && is_array($data['headers']) ) {
+            $this->setHeaders($data['headers']);
+
+            $cookies = http_parse_cookie($this->getHeader('Cookie'));
+            $this->setCookies($cookies->cookies);
         }
 
-        if ( !isset($this->data['method']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing method');  
+        if ( isset($data['post']) && is_array($data['post']) ) {
+            $this->setPostFields($data['post']);
         }
 
-        if ( !isset($this->data['headers']) || !is_array($this->data['headers']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing headers');  
+        if ( isset($data['get']) && is_array($data['get']) ) {
+            $this->setQueryFields($data['get']);
         }
 
-        if ( !isset($this->data['post']) || !is_array($this->data['post']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing post data');  
+        if ( isset($data['server']) && is_array($data['server']) ) {
+            $this->setServerInfo($data['server']);
         }
 
-        if ( !isset($this->data['get']) || !is_array($this->data['get']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing get data');  
-        }
-
-        if ( !isset($this->data['get']) || !is_array($this->data['get']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing get data');  
-        }
-
-        if ( !isset($this->data['server']) || !is_array($this->data['server']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing server data');  
-        }
-        
-        if ( !isset($this->data['server']) || !is_array($this->data['server']) ) {
-            throw new \InvalidArgumentException('Invalid request, missing server data');  
+        if ( isset($data['remote']) && is_array($data['remote']) ) {
+            $this->setRemoteInfo($data['remote']);
         }
 
         return true; 
     }
+    
+    /*
+    public function setBody( string $body )
+    public function setHttpVersion ( string $version )
+    */
 
-    public function overrideGlobals() {
+    /**
+     * Sets the remote client info
+     *
+     * @param float $timestamp microtimestamp
+     */
+    public function setTimestamp($timestamp) {
+        $this->timestamp = $timestamp;
+        $_SERVER['REQUEST_TIME'] = (int)$timestamp;
+        $_SERVER['REQUEST_TIME_FLOAT'] = $timestamp;
+    }
+
+    /**
+     * Sets the remote client info
+     *
+     * @param string $info mandatory keys: addr and port
+     */
+    public function setRemoteInfo($info) {
+        $this->remote = $info;
+        $_SERVER['REMOTE_ADDR'] = (string)$info['addr'];
+        $_SERVER['REMOTE_PORT'] = (string)$info['port'];
+    }
+
+    /**
+     * Sets the server info
+     *
+     * @param string $info mandatory keys: name, addr, port and proto
+     */
+    public function setServerInfo($info) {
+        $this->server = $info;
+
+        $_SERVER['SERVER_NAME'] = (string)$info['name'];
+        if ( !$_SERVER['SERVER_NAME'] ) $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'];
+
+
+        $_SERVER['SERVER_ADDR'] = (string)$info['addr'];
+        $_SERVER['SERVER_PORT'] = (string)$info['port'];
+        $_SERVER['SERVER_PROTOCOL'] = (string)$info['proto'];
+
+        //TODO: Version Server
+        $_SERVER['SERVER_SOFTWARE'] = 'Skeetr/0.0.1';
+    }
+
+    /**
+     * Sets the headers.
+     *
+     * @param array $headers associative array containing the new HTTP headers
+     */
+    public function setHeaders(array $headers) {
+        $this->headers = $headers;
+
         $_SERVER['HTTP_HOST'] = (string)$this->getHeader('Host');
         $_SERVER['HTTP_ACCEPT'] = (string)$this->getHeader('Accept');
         $_SERVER['HTTP_CONNECTION'] = (string)$this->getHeader('Connection'); 
@@ -67,60 +114,151 @@ class Request {
         $_SERVER['HTTP_ACCEPT_CHARSET'] = (string)$this->getHeader('Accept-Charset'); 
         $_SERVER['HTTP_CACHE_CONTROL'] = (string)$this->getHeader('Cache-Control'); 
         $_SERVER['HTTP_COOKIE'] = (string)$this->getHeader('Cookie'); 
+    }
 
-        $_SERVER['REQUEST_METHOD'] = (string)$this->getMethod();
-        $_SERVER['REQUEST_URI'] = $this->getUrl();
+    /**
+     * Sets the method.
+     *
+     * @param string $method
+     */
+    public function setMethod($method) {
+        $this->method = $method;
+        $this->applyToServer('REQUEST_METHOD', $method);
+    }
+
+    /**
+     * Sets URL
+     *
+     * @param string $url 
+     */
+    public function setUrl($url) {
+        $this->url = $url;
+        $this->applyToServer('REQUEST_URI', $url);
+    }
+
+    /**
+     * Sets POST fields
+     *
+     * @param array $fields 
+     */
+    public function setPostFields(array $fields) {
+        $this->post = $fields;
+        $_POST = $fields;
+        $_REQUEST = array_merge($_GET, $_POST);
+    }
+
+    /**
+     * Sets POST files
+     *
+     * @param array $fields 
+     */
+    public function setPostFiles() { 
+        $_FILES = array();
+        throw new \Exception('Not implemented'); 
+    }
+
+    /**
+     * Sets GET fields
+     *
+     * @param array $fields 
+     */
+    public function setQueryFields(array $fields) {
+        $this->get = $fields;
+
         $_SERVER['QUERY_STRING'] = $this->getQueryData();
 
-        $_SERVER['REQUEST_TIME'] = (int)$this->getTimestamp();
-        $_SERVER['REQUEST_TIME_FLOAT'] = $this->getTimestamp();
-
-        $_SERVER['SERVER_NAME'] = (string)$this->data['server']['name'];
-        if ( !$_SERVER['SERVER_NAME'] ) $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'];
-
-
-        $_SERVER['SERVER_ADDR'] = (string)$this->data['server']['addr'];
-        $_SERVER['SERVER_PORT'] = (string)$this->data['server']['port'];
-        $_SERVER['SERVER_PROTOCOL'] = (string)$this->data['server']['proto'];
-
-        $_SERVER['REMOTE_ADDR'] = (string)$this->data['remote']['addr'];
-        $_SERVER['REMOTE_PORT'] = (string)$this->data['remote']['port'];
-
-        //TODO: Version Server
-        $_SERVER['SERVER_SOFTWARE'] = 'Skeetr/0.0.1';
-
-        //TODO: REDIRECT_URL
-        //TODO: GATEWAY_INTERFACE
-        //TODO: REDIRECT_STATUS
-
-        $_COOKIE = $this->getCookies();
-        $_GET = $this->getQueryFields();
-        $_POST = $this->getPostFields();
+        $_GET = $fields;
         $_REQUEST = array_merge($_GET, $_POST);
-        $_FILES = array();
+    }
+
+    /**
+     * Sets cookies
+     *
+     * @param array $cookies 
+     */
+    public function setCookies(array $cookies) {
+        $this->cookies = $cookies;
+        $_COOKIE = $cookies;
     }
 
     public function getTimestamp() { return $this->timestamp; }
-    public function getUrl() { return $this->data['uri']; }
-    public function getMethod() { return $this->data['method']; }
-    public function getHeaders() { return $this->data['headers']; }
 
+    public function getRemoteInfo() { return $this->remote; }
+
+    public function getServerInfo() { return $this->server; }
+
+
+    /**
+     * Get headers
+     *
+     * @return array 
+     */
+    public function getHeaders() { return $this->headers; }
+
+    /**
+     * Get a header by name
+     *
+     * @param string $header
+     * @return string  
+     */
     public function getHeader($header) { 
         $header = strtolower($header);
-        if ( !isset($this->data['headers'][$header]) ) return null;
-        return $this->data['headers'][$header];
+        if ( !isset($this->headers[$header]) ) return null;
+        return $this->headers[$header];
+    }
+
+    /**
+     * Get method
+     *
+     * @return string 
+     */
+    public function getMethod() { return $this->method; }
+
+    /**
+     * Get URL
+     *
+     * @return string 
+     */
+    public function getUrl() { return $this->url; }
+
+    /**
+     * Get POST fields
+     *
+     * @return array 
+     */
+    public function getPostFields() { return $this->post; }
+
+    /**
+     * Get GET fields
+     *
+     * @return array 
+     */
+    public function getQueryFields() { return $this->get; }
+
+    /**
+     * Get the current query data in form of an urlencoded query string.
+     *
+     * @return string
+     */
+    public function getQueryData() { return http_build_query($this->get); }
+
+    /**
+     * Get POST files
+     *
+     * @return array 
+     */
+    public function getPostFiles() { throw new \Exception('Not implemented'); }
+
+    /**
+     * Get cookies
+     *
+     * @return array 
+     */
+    public function getCookies() {
+       return $this->cookies;
     }
     
-    public function getPostFields() { return $this->data['post']; }
-    public function getQueryFields() { return $this->data['get']; }
-    public function getPostFiles() { throw new Exception('Not implemented'); }
-
-    public function getQueryData() { return http_build_query($this->data['get']); }
-    public function getCookies() {
-        if ( !$this->cookies ) {
-            $this->cookies = http_parse_cookie($this->getHeader('Cookie'));
-        }
-       
-       return $this->cookies->cookies;
+    private function applyToServer($key, $value) {
+        $_SERVER[$key] = $value;
     }
 }

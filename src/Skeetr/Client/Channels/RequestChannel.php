@@ -26,7 +26,9 @@ class RequestChannel extends Channel {
     public function process(\GearmanJob $job) {
         $start = microtime(true);
 
-        $request = new Request($job->workload());
+        $request = new Request();
+        $request->fromJSON($job->workload());
+        
         $result = call_user_func($this->callback, $request);
 
         $this->client->notify(Worker::STATUS_SUCCESS, microtime(true) - $start);
