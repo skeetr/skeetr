@@ -1,4 +1,13 @@
 <?php
+/*
+ * This file is part of the Skeetr package.
+ *
+ * (c) Máximo Cuadros <maximo@yunait.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Skeetr\Tests;
 use Skeetr\Client\Channels\RequestChannel;
 
@@ -6,13 +15,19 @@ use Skeetr\Mocks\Client;
 use Skeetr\Mocks\GearmanJob;
 use Skeetr\Mocks\Gearman\Worker;
 
-class RequestChannelTest extends TestCase {
-    public function testProcess() {
+class RequestChannelTest extends TestCase
+{
+    /**
+     * @covers Skeetr\Client\Channel::process
+     * @covers Skeetr\Client\Channels\RequestChannel::process
+     */
+    public function testProcess()
+    {
         $client = new Client;
 
         $channel = new RequestChannel($client);
         $channel->setCallback(function($request) { 
-            return $request->getUrl(); 
+            return $request->getRequestUrl(); 
         });
 
         $job = new GearmanJob;
@@ -23,7 +38,8 @@ class RequestChannelTest extends TestCase {
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testRegisterNoChannel() {
+    public function testRegisterNoChannel()
+    {
         $client = new Client;
 
         $channel = new RequestChannel($client);
@@ -36,7 +52,8 @@ class RequestChannelTest extends TestCase {
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testRegisterNoCallback() {
+    public function testRegisterNoCallback()
+    {
         $client = new Client;
 
         $channel = new RequestChannel($client);

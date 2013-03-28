@@ -1,17 +1,37 @@
 <?php
+/*
+ * This file is part of the Skeetr package.
+ *
+ * (c) Máximo Cuadros <maximo@yunait.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Skeetr\Client\Channels;
 use Skeetr\Client\Channel;
-use Skeetr\HTTP\Request;
+use Skeetr\Client\HTTP\Request;
 use Skeetr\Gearman\Worker;
 
-class RequestChannel extends Channel {
+class RequestChannel extends Channel
+{
     private $callback;
 
-    public function setCallback($callback) {
+    /**
+     * Set the callback, this will get called when a job is submitted 
+     *
+     * @param callback $callback
+     */
+    public function setCallback($callback)
+    {
         $this->callback = $callback;
     }
 
-    public function register(Worker $worker) {
+    /**
+     * {@inheritdoc}
+     */
+    public function register(Worker $worker)
+    {
         if ( !strlen($this->channel) ) {
             throw new \InvalidArgumentException('Invalid channel name.');
         }
@@ -22,13 +42,15 @@ class RequestChannel extends Channel {
 
         return parent::register($worker);
     } 
-
-    public function process(\GearmanJob $job) {
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function process(\GearmanJob $job) 
+    {
         $start = microtime(true);
 
-        $request = new Request();
-        $request->fromJSON($job->workload());
-        
+        $request = Request::fromJSON($job->workload());
         $result = call_user_func($this->callback, $request);
 
         $this->client->notify(Worker::STATUS_SUCCESS, microtime(true) - $start);
