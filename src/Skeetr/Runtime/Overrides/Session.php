@@ -235,9 +235,4 @@ class Session extends Override {
 
         $_SESSION = array();
     }
-
-    static public function configure(Response $response) {
-        self::session_write_close();
-        self::reset();
-    }
 }

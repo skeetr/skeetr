@@ -6,6 +6,8 @@ use Skeetr\Runtime\Override;
 
 class ManagerTest extends TestCase {
     public function testAuto() {
+        ManagerMock::$loaded = false;
+        ManagerMock::$registered = array();
         ManagerMock::auto();
 
         $this->assertSame(3, count(ManagerMock::$registered));
@@ -19,7 +21,7 @@ class ManagerTest extends TestCase {
         $this->assertFalse($function->isInternal());
 
         $this->assertSame('foo', natcasesort('foo'));
-        $this->assertTrue(Manager::overrided('natcasesort'));
+        $this->assertTrue(Manager::overridden('natcasesort'));
         $this->assertSame(1, Example::$test);
 
         Example::$test = 0;
@@ -91,6 +93,7 @@ class ManagerTest extends TestCase {
 
 class ManagerMock extends Manager {
     static public $registered = array();
+    static public $loaded = false;
 
     static public function register($class) {
         if ( self::registered($class) ) {

@@ -54,8 +54,10 @@ class Request extends HttpMessage
         if ( isset($data['headers']) && is_array($data['headers']) ) {
             $request->setHeaders($data['headers']);
 
-            $cookies = http_parse_cookie($request->getHeader('Cookie'));
-            $request->setCookies($cookies->cookies);
+            //Malformed cookies will return a fatal error
+            if ( $cookies = @http_parse_cookie($request->getHeader('Cookie')) ) {
+                $request->setCookies($cookies->cookies);
+            }
         }
 
         if ( isset($data['post']) && is_array($data['post']) ) {

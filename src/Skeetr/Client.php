@@ -15,7 +15,8 @@ use Skeetr\Client\Journal;
 use Skeetr\Client\Channel;
 use Skeetr\Client\Channels\ControlChannel;
 use Skeetr\Client\Channels\RequestChannel;
-
+use Skeetr\Runtime\Manager;
+    
 class Client {
     protected $retry = 5;
     protected $memoryLimit = 67108864; //64mb
@@ -34,6 +35,9 @@ class Client {
         $this->journal = new Journal();
         $this->logger = $logger;
         $this->worker = $worker;
+
+        //TODO: Optional
+        Manager::auto();
     }
 
     public function getWorker() { return $this->worker; }

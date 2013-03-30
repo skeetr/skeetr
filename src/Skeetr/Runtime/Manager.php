@@ -11,10 +11,13 @@
 namespace Skeetr\Runtime;
 
 class Manager {
+    static private $loaded = false;
     static private $registered = array();
     static private $functions = array();
 
     static public function auto($pattern = null) {
+        if ( static::$loaded ) return true;
+
         if ( !$pattern ) $pattern = __DIR__ . '/Overrides/*.php';
 
         foreach ( glob($pattern) as $file) {
@@ -25,6 +28,8 @@ class Manager {
             $class = '\\'. __NAMESPACE__ . str_replace(DIRECTORY_SEPARATOR, '\\', $base);
             static::register($class);
         }
+
+        static::$loaded = true;
     }
 
     static public function register($class) {
@@ -71,7 +76,7 @@ class Manager {
         static::$registered[$class] = 1;
     }
 
-    static public function overrided($function) {
+    static public function overridden($function) {
          if ( isset(static::$functions[$function]) ) return true;
         return false;       
     }
@@ -81,7 +86,14 @@ class Manager {
         return false;
     }
 
+    static public function loaded() {
+        return static::$loaded;
+    }    
+
     static public function reset($class = null) {
+        if ( !static::$loaded ) return false;
+
+
         if ( $class && isset(static::$registered[$class]) ) return $class::reset();
         else if ( $class ) return false;
 
@@ -90,6 +102,8 @@ class Manager {
     }
 
     static public function values($class = null) {
+        if ( !static::$loaded ) return false;
+
         if ( $class && isset(static::$registered[$class]) ) {
             $tmp = explode('\\', $class);
             $key = strtolower(end($tmp));

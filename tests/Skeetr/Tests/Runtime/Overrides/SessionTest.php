@@ -12,7 +12,7 @@ class SessionTest extends TestCase {
     }
 
     public function testSessionStatus() {
-        if ( !Manager::overrided('session_status') ) return false;
+        if ( !Manager::overridden('session_status') ) return false;
         
         $this->assertSame(PHP_SESSION_NONE, session_status());
 

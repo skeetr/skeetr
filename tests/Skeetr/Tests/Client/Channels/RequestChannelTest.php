@@ -31,7 +31,10 @@ class RequestChannelTest extends TestCase
         });
 
         $job = new GearmanJob;
-        $this->assertSame('/filename.html', $channel->process($job));
+        $json = $channel->process($job);
+        $data = json_decode($json, true);
+
+        $this->assertSame('/filename.html', $data['body']);
         $this->assertTrue(0 < $client->getTime());
     }
 

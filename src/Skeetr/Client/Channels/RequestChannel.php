@@ -11,11 +11,15 @@
 namespace Skeetr\Client\Channels;
 use Skeetr\Client\Channel;
 use Skeetr\Client\HTTP\Request;
+use Skeetr\Client\HTTP\Response;
+
 use Skeetr\Gearman\Worker;
+use Skeetr\Runtime\Manager;
 
 class RequestChannel extends Channel
 {
     private $callback;
+    private $runtime = true;
 
     /**
      * Set the callback, this will get called when a job is submitted 
@@ -25,6 +29,12 @@ class RequestChannel extends Channel
     public function setCallback($callback)
     {
         $this->callback = $callback;
+    }
+
+    public function enableRuntime($status = null)
+    {
+        if ( $status !== null ) $this->runtime = $status;
+        return $this->runtime;
     }
 
     /**
@@ -51,9 +61,42 @@ class RequestChannel extends Channel
         $start = microtime(true);
 
         $request = Request::fromJSON($job->workload());
-        $result = call_user_func($this->callback, $request);
+        $response = new Response;
+
+        $result = call_user_func($this->callback, $request, $response);
+        if ( $result ) $response->setBody($result);
+        $this->prepareResponse($response);
 
         $this->client->notify(Worker::STATUS_SUCCESS, microtime(true) - $start);
-        return $result;
+        return $response->toJSON();
+    }
+
+    /**
+     * Set the headers and the response code to a given $response, class is reset after.
+     *
+     * @param Response $response
+     * @return boolean
+     */ 
+    private function prepareResponse(Response $response)
+    {
+        if ( !Manager::loaded() ) return false;
+        session_write_close();
+
+        $values = Manager::values();
+        if ( isset($values['header']) ) {
+            if ( isset($values['header']['code']) ) {
+                $response->setResponseCode($values['header']['code']);
+            } 
+
+            if ( isset($values['header']['list']) ) {
+                foreach( $values['header']['list'] as $headers ) {
+                    foreach ($headers as $header) {
+                        $response->addHeader($header, true);
+                    }
+                }
+            }
+        }
+
+        Manager::reset();
     }
 }

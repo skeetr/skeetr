@@ -121,22 +121,4 @@ class Header extends Override {
     static public function values() {
         return get_class_vars(get_called_class());
     }
-
-    /**
-     * Set the headers and the response code to a given $response, class is reset after.
-     *
-     * @param Response $response
-     * @return boolean
-     */ 
-    static public function configure(Response $response) {
-        if ( self::$callback ) call_user_func(self::$callback);
-
-        $response->setResponseCode(self::$code);
-
-        foreach (self::headers_list() as $header) {
-            $response->setHeader($header, false);
-        }
-
-        self::reset();
-    }
 }
