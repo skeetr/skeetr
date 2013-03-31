@@ -28,8 +28,6 @@ $client->setCallback(function($request, $response) use ($logger) {
     if ( !isset($_SESSION['count']) ) $_SESSION['count'] = 0;
     $_SESSION['count']++;
 
-    //throw new \LogicException("Error Processing Request", 1);
-    explode();
 
     header('Foo: boo');
     setcookie('foo', 'bar');

@@ -34,10 +34,10 @@ class Error
     private static $logger;
 
     /**
-     * Register the error handler.
+     * Register the error handler. The level at which the conversion to Exception is done 
+     * (null to use the error_reporting() value and 0 to disable)
      *
-     * @param integer $level The level at which the conversion to Exception is done (null to use the error_reporting() value and 0 to disable)
-     *
+     * @param integer $level 
      * @return The registered error handler
      */
     public static function register($level = null)
@@ -117,14 +117,18 @@ class Error
         $exceptionHandler = set_exception_handler(function() {});
         restore_exception_handler();
 
-        if (is_array($exceptionHandler) && $exceptionHandler[0] instanceof ExceptionHandler) {
+        if ( 
+            is_array($exceptionHandler) && 
+            $exceptionHandler[0] instanceof Error
+        ) { 
             $level = isset($this->levels[$type]) ? $this->levels[$type] : $type;
             $message = sprintf('%s: %s in %s line %d', $level, $error['message'], $error['file'], $error['line']);
-            $exception = new FatalErrorException($message, 0, $type, $error['file'], $error['line']);
-            $exceptionHandler[0]->handle($exception);
+            throw new \ErrorException($message, 0, $type, $error['file'], $error['line']);
+           // $exceptionHandler[0]->handle($exception);
         }
     }
-   /**
+
+    /**
      * Sends a Response for the given Exception.
      *
      * @param \Exception $exception An \Exception instance
