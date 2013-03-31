@@ -1,23 +1,35 @@
 <?php
+use Skeetr\Debugger;
 use Skeetr\Client;
 use Skeetr\Gearman\Worker;
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-require __DIR__ . '/../vendor/autoload.php';
+use Skeetr\Client\Handler\Error;
 
-$worker = new Worker();
-$worker->addServer('front-1.iunait.es', 4730);
+require __DIR__ . '/../vendor/autoload.php';
 
 $logger = new Logger('debugger');
 $logger->pushHandler(new StreamHandler('php://stdout', Logger::INFO));
+
+Error::register();
+Error::setLogger($logger);
+
+$debugger = new Debugger($logger);
+$debugger->run();
+
+$worker = new Worker();
+$worker->addServer('front-1.iunait.es', 4730);
 
 $client = new Client($logger, $worker);
 $client->setCallback(function($request, $response) use ($logger) { 
     session_start();
     if ( !isset($_SESSION['count']) ) $_SESSION['count'] = 0;
     $_SESSION['count']++;
+
+    //throw new \LogicException("Error Processing Request", 1);
+    explode();
 
     header('Foo: boo');
     setcookie('foo', 'bar');

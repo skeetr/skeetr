@@ -72,7 +72,7 @@ class Debugger {
             if ( $error = $this->getIncrementalErrorOutput() ) {
                 var_dump('----ERROR----', $error, '----ERROR----');
             } else if ( $output = $this->getIncrementalOutput() ) {
-                var_dump($output);
+                echo $output;
             }
 
             if ( $this->watcher->watch() ) {

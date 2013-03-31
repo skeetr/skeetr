@@ -63,12 +63,22 @@ class RequestChannel extends Channel
         $request = Request::fromJSON($job->workload());
         $response = new Response;
 
-        $result = call_user_func($this->callback, $request, $response);
+        $result = $this->runCallback($request, $response);
         if ( $result ) $response->setBody($result);
         $this->prepareResponse($response);
 
         $this->client->notify(Worker::STATUS_SUCCESS, microtime(true) - $start);
         return $response->toJSON();
+    }
+
+
+    private function runCallback(Request $request, Response $response)
+    {
+        try {
+            return call_user_func($this->callback, $request, $response);
+        } catch (\Exception $e) {
+            return 'ERROR: ' . $e->getMessage();   
+        }
     }
 
     /**
