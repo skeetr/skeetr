@@ -11,6 +11,7 @@
 namespace Skeetr\Tests;
 use Skeetr\Client\Channels\ControlChannel;
 use Skeetr\Mocks\Client;
+use Skeetr\Mocks\GearmanJob;
 
 class ControlChannelTest extends TestCase
 {
@@ -25,4 +26,31 @@ class ControlChannelTest extends TestCase
         $this->assertTrue(strlen($channel->getChannel()) > 6);   
     }
 
+    public function testJournalCommand()
+    {
+        $client = new Client;
+
+        $channel = new ControlChannel($client, 'foo');
+
+        $job = new GearmanJob;
+        $job->setWorkload(json_encode(array('command' => 'journal')));
+
+        $json = $channel->process($job);
+        $data = json_decode($json, true);
+        $this->assertTrue(isset($data['works']));   
+    }
+
+    public function testShutdownCommand()
+    {
+        $client = new Client;
+
+        $channel = new ControlChannel($client, 'foo');
+
+        $job = new GearmanJob;
+        $job->setWorkload(json_encode(array('command' => 'shutdown')));
+
+        $json = $channel->process($job);
+        $data = json_decode($json, true);
+        $this->assertTrue(isset($data['result']));   
+    }
 }

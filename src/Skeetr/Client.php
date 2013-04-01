@@ -144,4 +144,12 @@ class Client {
         $request->setCallback($this->callback);
         $request->register($this->worker);
     }
+
+    public function getLogger() {
+        return $this->logger;
+    }
+
+    public function shutdown() {
+        exit();
+    }
 }

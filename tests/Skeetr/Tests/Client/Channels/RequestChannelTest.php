@@ -31,6 +31,8 @@ class RequestChannelTest extends TestCase
         });
 
         $job = new GearmanJob;
+        $job->setWorkload(TestCase::getResource('Request/GET'));
+
         $json = $channel->process($job);
         $data = json_decode($json, true);
 
