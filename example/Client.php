@@ -25,7 +25,7 @@ $gmc->addServer('front-1.iunait.es', 4730);
 $gmc->setCompleteCallback("reverse_complete");
 
 foreach ($control as $function) {
-    $task= $gmc->addTask($function, "Hello World!", null, "1");
+    $task= $gmc->addTask($function, json_encode(['command' => 'shutdown']), null, "1");
 }
 # Añade tareas, una de ellas de baja prioridad
 
