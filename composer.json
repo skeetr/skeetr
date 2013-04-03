@@ -1,6 +1,7 @@
 {
     "name": "skeetr/skeetr",
     "homepage": "http://github.com/skeetr/skeetr",
+    "version": "0.0.1-alpha",
     "type": "library",
     "description": "PHP Application Server based on Gearmand + Nginx, your PHP faster than ever.",
     "license": "MIT",
