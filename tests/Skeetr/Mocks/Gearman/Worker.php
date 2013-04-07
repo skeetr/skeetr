@@ -19,7 +19,7 @@ class Worker extends WorkerMocked {
         return GEARMAN_NO_ACTIVE_FDS;
     }
 
-    public function error() {
+    public function lastError() {
         return 'mocked error';
     }
 }
