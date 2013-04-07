@@ -17,13 +17,15 @@ use Skeetr\Client\Channels\ControlChannel;
 use Skeetr\Client\Channels\RequestChannel;
 use Skeetr\Runtime\Manager;
     
-class Client {
-    protected $retry = 5;
+class Client
+{
     protected $memoryLimit = 67108864; //64mb
     protected $interationsLimit;
+    protected $sleepTimeOnError = 5;
 
+    protected $channels = array();
+    protected $channelName = 'default';
     protected $logger;
-    protected $channel = 'default';
     protected $gearman;
     protected $callback;
     protected $journal;
@@ -41,26 +43,60 @@ class Client {
         Manager::auto();
     }
 
+    /**
+     * Sets the client id
+     *
+     * @param string $id
+     * @return self The current Process instance
+     */
     public function setId($id)
     {
         $this->id = $id;
+        return $this;
     }
 
+    /**
+     * Sets the Gearman worker instance
+     *
+     * @param Worker $worker
+     * @return self The current Process instance
+     */
     public function setWorker(Worker $worker)
     {
         $this->worker = $worker;
+        return $this;
     }
 
+    /**
+     * Sets the journal instance
+     *
+     * @param Journal $journal
+     * @return self The current Process instance
+     */
     public function setJournal(Journal $journal)
     {
         $this->journal = $journal;
+        return $this;
     }
 
-    public function setChannel($channel)
+    /**
+     * Sets the request channel name, where the request will be attended
+     *
+     * @param string $channelName
+     * @return self The current Process instance
+     */
+    public function setChannelName($channelName)
     {
-        $this->channel = $channel;
+        $this->channelName = $channelName;
+        return $this;
     }
 
+    /**
+     * Sets the callback, this callback generate the result of the request
+     *
+     * @param string $channelName
+     * @return self The current Process instance
+     */
     public function setCallback($callback)
     {
         if ( !is_callable($callback) ) {
@@ -70,73 +106,150 @@ class Client {
         }
 
         $this->callback = $callback;
+        return $this;
     }
 
-    public function setRetry($secs)
-    {
-        $this->retry = $secs;
-    }
-
+    /**
+     * Sets the memory limit, when this limit is reached the loops ends
+     *
+     * @param integer $bytes
+     * @return self The current Process instance
+     */
     public function setMemoryLimit($bytes)
     {
         $this->memoryLimit = $bytes;
+        return $this;
     }
 
+    /**
+     * Sets the iterations limit, when this limit is reached the loops ends
+     *
+     * @param integer $times
+     * @return self The current Process instance
+     */
     public function setInterationsLimit($times)
     {
         $this->interationsLimit = $times;
+        return $this;
     }
 
-    public function setLogger(LoggerInterface $logger)
+    /**
+     * Sets the number of seconds to wait when the client lost the connection with the server
+     *
+     * @param integer $secs
+     * @return self The current Process instance
+     */
+    public function setSleepTimeOnError($secs)
+    {
+        $this->sleepTimeOnError = $secs;
+        return $this;
+    }
+
+    /**
+     * Sets the logger instance
+     *
+     * @param LoggerInterface $logger
+     * @return self The current Process instance
+     */
+    public function setLogger(LoggerInterface $logger = null)
     {
         $this->logger = $logger;
+        return $this;
     }
 
+    /**
+     * Returns the client id
+     *
+     * @return string
+     */
     public function getId()
     { 
         return $this->id;
     }
 
+    /**
+     * Returns the Gearman worker instance
+     *
+     * @return Worker
+     */
     public function getWorker()
     {
         return $this->worker; 
     }
 
+    /**
+     * Returns the journal instance
+     *
+     * @return Journal
+     */
     public function getJournal()
     {
         return $this->journal;
     }
 
-    public function getChannel()
+    /**
+     * Returns the request channel name
+     *
+     * @return string
+     */
+    public function getChannelName()
     { 
-        return $this->channel;
+        return $this->channelName;
     }
 
+    /**
+     * Returns the callback
+     *
+     * @return callback
+     */
     public function getCallback()
     { 
         return $this->callback;
     }
 
-    public function getRetry()
-    { 
-        return $this->retry; 
-    }
-
+    /**
+     * Returns the memory limit
+     *
+     * @return integer
+     */
     public function getMemoryLimit()
     { 
         return $this->memoryLimit; 
     }
 
+    /**
+     * Returns the iterations limit
+     *
+     * @return integer
+     */
     public function getInterationsLimit()
     { 
         return $this->interationsLimit;
     }
 
+    /**
+     * Returns the number of seconds to wait when the client lost the connection with the server
+     *
+     * @return integer
+     */
+    public function getSleepTimeOnError()
+    {
+        return $this->sleepTimeOnError;
+    }
+
+    /**
+     * Returns the logger instance
+     *
+     * @return LoggerInterface
+     */
     public function getLogger()
     {
         return $this->logger;
     }
 
+    /**
+     * Wait for and perform requests
+     */
     public function work()
     {
         $this->log('notice', 'Registering channels...');
@@ -146,6 +259,28 @@ class Client {
         $this->loop();
     }
 
+    /**
+     * Stops the main loop and exits the work function
+     *
+     * @param string $message optional
+     * @param boolean
+     */
+    public function shutdown($message = null)
+    {
+        if ( !$this->loop ) return false;
+
+        if ($message) $this->log('notice', sprintf('Loop stopped: %s', $message));
+        
+        $this->loop = false;
+        return true;
+    }
+
+    /**
+     * Receives a notification from the channels and save it to the journal.
+     *
+     * @param integer $status Worker::STATUS_* conts
+     * @param mixed $value optional
+     */
     public function notify($status, $value = null)
     {
         switch ($status) {
@@ -155,16 +290,6 @@ class Client {
             case Worker::STATUS_ERROR: return $this->error();
             case Worker::STATUS_IDLE: return $this->idle();
         }      
-    }
-
-    public function shutdown($message = null)
-    {
-        if ( !$this->loop ) return false;
-
-        if ($message) $this->log('notice', sprintf('Loop stopped: %s', $message));
-        
-        $this->loop = false;
-        return true;
     }
         
     protected function loop()
@@ -209,8 +334,8 @@ class Client {
     {
         $this->log('notice', sprintf('Connection lost, waiting %s seconds ...', $this->sleepTimeOnError));
 
-        $this->journal->addLostConnection($this->disconnectedSleep);
-        sleep($this->disconnectedSleep); 
+        $this->journal->addLostConnection($this->sleepTimeOnError);
+        sleep($this->sleepTimeOnError); 
         $this->idle();
     }
 
@@ -218,11 +343,13 @@ class Client {
     {
         $control = new ControlChannel($this, 'control_%s');
         $control->register($this->worker);
+        $this->channels['control'] = $control;
 
         $request = new RequestChannel($this);
-        $request->setChannel($this->channel);
+        $request->setChannel($this->channelName);
         $request->setCallback($this->callback);
         $request->register($this->worker);
+        $this->channels['request'] = $request;
     }
 
     protected function checkStatus()

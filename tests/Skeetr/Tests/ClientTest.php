@@ -10,6 +10,7 @@
 
 namespace Skeetr\Tests;
 use Skeetr\Client;
+use Skeetr\Client\Journal;
 use Skeetr\Mocks\Gearman\Worker;
 
 class ClientTest extends TestCase {
@@ -20,74 +21,192 @@ class ClientTest extends TestCase {
 
         return $client;
     }
-
-    public function testGetJournal() {
-        $client = $this->createClient();
-        $this->assertInstanceOf('Skeetr\Client\Journal', $client->getJournal());
-    }
-
-    public function testGetWorker() {
-        $client = $this->createClient();
-        $this->assertInstanceOf('Skeetr\Gearman\Worker', $client->getWorker());
-    }
-
-    public function testSetId() {
+    
+    public function testGetIdAndSetId()
+    {
         $client = $this->createClient();
         $this->assertTrue((boolean)$client->getId());
 
-        $client->setId('test');
+        $result = $client->setId('test');
         $this->assertSame('test', $client->getId());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
     }
 
-    public function testSetChannel() {
+    public function testGetWorkerAndSetWorker()
+    {
         $client = $this->createClient();
-        $this->assertSame('default', $client->getChannel());
 
-        $client->setChannel('test');
-        $this->assertSame('test', $client->getChannel());
+        $worker = $client->getWorker();
+        $this->assertInstanceOf('Skeetr\Gearman\Worker', $worker);
+
+        $result = $client->setWorker(new Worker);
+        $this->assertNotSame($worker, $client->getWorker());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
     }
 
-    public function testSetRetry() {
+    public function testGetJournalAndSetJournal()
+    {
         $client = $this->createClient();
-        $client->setRetry(5);
-        $this->assertSame(5, $client->getRetry());
+
+        $journal = $client->getJournal();
+        $this->assertInstanceOf('Skeetr\Client\Journal', $journal);
+
+        $result = $client->setJournal(new Journal);
+        $this->assertNotSame($journal, $client->getJournal());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
     }
 
-    public function testSetInterationsLimit() {
+    public function testGetChannelNameAndSetChannelName()
+    {
         $client = $this->createClient();
-        $client->setInterationsLimit(5);
-        $this->assertSame(5, $client->getInterationsLimit());
+        $this->assertSame('default', $client->getChannelName());
+
+        $result = $client->setChannelName('test');
+        $this->assertSame('test', $client->getChannelName());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
     }
 
-    public function testSetMemoryLimit() {
+    public function testGetMemoryLimitAndSetMemoryLimit() 
+    {
         $client = $this->createClient();
-        $client->setMemoryLimit(5);
+        
+        $result = $client->setMemoryLimit(5);
         $this->assertSame(5, $client->getMemoryLimit());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
     }
 
-    public function testSetCallback() {
+    public function testGetInterationsLimitAndSetInterationsLimit()
+    {
+        $client = $this->createClient();
+        
+        $result = $client->setInterationsLimit(5);
+        $this->assertSame(5, $client->getInterationsLimit());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
+    }
+
+    public function testGetSleepTimeOnErrorAndSetSleepTimeOnError()
+    {
+        $client = $this->createClient();
+        
+        $result = $client->setSleepTimeOnError(50);
+        $this->assertSame(50, $client->getSleepTimeOnError());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
+    }    
+
+    public function testGetLoggerAndSetLogger()
+    {
+        $client = $this->createClient();
+
+        $this->assertInstanceOf('Psr\Log\LoggerInterface', $client->getLogger());
+
+        $result = $client->setLogger(null);
+        $this->assertNull($client->getLogger());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
+    }
+
+    public function testSetCallbackAndGetCallback()
+    {
         $client = $this->createClient();
 
         $closure = function() { };
-        $client->setCallback($closure);
+        $result = $client->setCallback($closure);
 
         $this->assertSame($closure, $client->getCallback());
+
+        $this->assertInstanceOf('Skeetr\Client', $result);
     }
 
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testSetCallbackException() {
+    public function testSetCallbackException()
+    {
         $client = $this->createClient();
         $client->setCallback(null);
     }
 
-    public function testNotify() {
+    public function testNotifySuccess()
+    {
         $client = $this->createClient();
         $client->notify(Worker::STATUS_SUCCESS, 5);
 
         $journal = $client->getJournal();
         $this->assertSame(1, $journal->getWorks());
+
+        $last = end($this->logs);
+        $this->assertContains('Executed job in', $last['message']);
+    }
+
+    public function testNotifyDisconnected()
+    {
+        $client = $this->createClient();
+        $client->setSleepTimeOnError(1);
+        $client->notify(Worker::STATUS_DISCONNECTED);
+
+        $journal = $client->getJournal();
+        $this->assertSame(1, $journal->getLostConnection());
+
+        $last = reset($this->logs);
+        $this->assertContains('waiting 1 seconds', $last['message']);
+    }
+
+    public function testNotifyTimeout()
+    {
+        $client = $this->createClient();
+        $client->setSleepTimeOnError(1);
+        $client->notify(Worker::STATUS_TIMEOUT);
+
+        $journal = $client->getJournal();
+        $this->assertSame(1, $journal->getTimeouts());
+
+        $last = end($this->logs);
+        $this->assertContains('Timeout', $last['message']);
+    }
+
+    public function testNotifyError()
+    {
+        $client = $this->createClient();
+        $client->setSleepTimeOnError(1);
+        $client->notify(Worker::STATUS_ERROR);
+
+        $journal = $client->getJournal();
+        $this->assertSame(1, $journal->getErrors());
+
+        $last = end($this->logs);
+        $this->assertContains('mocked error', $last['message']);
+    }
+
+    public function testNotifyIdle()
+    {
+        $client = $this->createClient();
+        $client->setSleepTimeOnError(1);
+        $client->notify(Worker::STATUS_IDLE);
+
+        $journal = $client->getJournal();
+        $this->assertGreaterThan(0, $journal->getIdle());
+
+        $last = end($this->logs);
+        $this->assertContains('Waiting for job', $last['message']);
+    }
+
+    public function testWork()
+    {
+        $client = $this->createClient();
+        $client->work();
+
+        $this->assertTrue($client->loop);
+
+        $channels = $client->getChannels();
+        $this->assertInstanceOf('Skeetr\Client\Channels\ControlChannel', $channels['control']);
+        $this->assertInstanceOf('Skeetr\Client\Channels\RequestChannel', $channels['request']);
     }
 
     public function testShutdown()
@@ -136,6 +255,11 @@ class ClientTest extends TestCase {
 
 class ClientMock extends Client {
     public $loop = false;
+
+    public function getChannels()
+    {
+        return $this->channels;
+    }
 
     public function evaluate($code)
     {
