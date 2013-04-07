@@ -14,9 +14,11 @@ use Skeetr\Mocks\Gearman\Worker;
 
 class ClientTest extends TestCase {
     public function createClient() {
-        $logger = $this->getMock('Psr\Log\LoggerInterface');
-        $worker = new Worker();
-        return new ClientMock($logger, $worker);
+        $client = new ClientMock(new Worker);
+        $client->setCallback(function() {});
+        $client->setLogger($this->logger);
+
+        return $client;
     }
 
     public function testGetJournal() {
@@ -51,10 +53,10 @@ class ClientTest extends TestCase {
         $this->assertSame(5, $client->getRetry());
     }
 
-    public function testSetWorksLimit() {
+    public function testSetInterationsLimit() {
         $client = $this->createClient();
-        $client->setWorksLimit(5);
-        $this->assertSame(5, $client->getWorksLimit());
+        $client->setInterationsLimit(5);
+        $this->assertSame(5, $client->getInterationsLimit());
     }
 
     public function testSetMemoryLimit() {
@@ -87,11 +89,64 @@ class ClientTest extends TestCase {
         $journal = $client->getJournal();
         $this->assertSame(1, $journal->getWorks());
     }
+
+    public function testShutdown()
+    {
+        $client = $this->createClient();
+
+        $this->assertFalse($client->shutdown());
+
+        $client->work();
+        $this->assertTrue($client->shutdown());
+    }
+
+    public function testCheckStatusMemoryLimit()
+    {
+        $client = $this->createClient();
+        
+        $client->work();
+        $this->assertTrue($client->loop);
+
+        $client->setMemoryLimit(10);
+
+        $client->work();
+        $this->assertFalse($client->loop);
+
+        $last = end($this->logs);
+        $this->assertContains('Memory limit reached', $last['message']);
+    }
+
+    public function testCheckStatusIterationsLimit()
+    {
+        $client = $this->createClient();
+        
+        $client->work();
+        $this->assertTrue($client->loop);
+
+        $client->setInterationsLimit(1);
+
+        $client->work();
+        $this->assertFalse($client->loop);
+
+        $last = end($this->logs);
+        $this->assertContains('Iteration limit reached', $last['message']);
+    }
 }
 
 
 class ClientMock extends Client {
-    public function evaluate($code) {
+    public $loop = false;
+
+    public function evaluate($code)
+    {
         return parent::evaluate($code);
+    }
+
+    protected function loop()
+    {
+        $this->loop = true;
+        $this->notify(Worker::STATUS_SUCCESS);
+
+        $this->checkStatus();
     }
 }

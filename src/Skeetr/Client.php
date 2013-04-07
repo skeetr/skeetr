@@ -20,41 +20,49 @@ use Skeetr\Runtime\Manager;
 class Client {
     protected $retry = 5;
     protected $memoryLimit = 67108864; //64mb
-    protected $worksLimit;
+    protected $interationsLimit;
 
     protected $logger;
     protected $channel = 'default';
     protected $gearman;
     protected $callback;
     protected $journal;
+    protected $loop;
 
     protected $waitingSince;
 
-    public function __construct(LoggerInterface $logger, Worker $worker) {
+    public function __construct(Worker $worker)
+    {
         $this->id = uniqid(null, true);
         $this->journal = new Journal();
-        $this->logger = $logger;
         $this->worker = $worker;
 
         //TODO: Optional
         Manager::auto();
     }
 
-    public function getWorker() { return $this->worker; }
-    public function getJournal() { return $this->journal; }
-
-    public function getChannel() { return $this->channel; }
-    public function setChannel($channel) {
-        $this->channel = $channel;
-    }
-
-    public function getId() { return $this->id; }
-    public function setId($id) {
+    public function setId($id)
+    {
         $this->id = $id;
     }
 
-    public function getCallback() { return $this->callback; }
-    public function setCallback($callback) {
+    public function setWorker(Worker $worker)
+    {
+        $this->worker = $worker;
+    }
+
+    public function setJournal(Journal $journal)
+    {
+        $this->journal = $journal;
+    }
+
+    public function setChannel($channel)
+    {
+        $this->channel = $channel;
+    }
+
+    public function setCallback($callback)
+    {
         if ( !is_callable($callback) ) {
             throw new \InvalidArgumentException(
                 'Invalid argument $callback, must be callabe.'
@@ -64,30 +72,82 @@ class Client {
         $this->callback = $callback;
     }
 
-    public function getRetry() { return $this->retry; }
-    public function setRetry($secs) {
+    public function setRetry($secs)
+    {
         $this->retry = $secs;
     }
 
-    public function getMemoryLimit() { return $this->memoryLimit; }
-    public function setMemoryLimit($bytes) {
+    public function setMemoryLimit($bytes)
+    {
         $this->memoryLimit = $bytes;
     }
 
-    public function getWorksLimit() { return $this->worksLimit; }
-    public function setWorksLimit($times) {
-        $this->worksLimit = $times;
+    public function setInterationsLimit($times)
+    {
+        $this->interationsLimit = $times;
     }
 
-    public function work() {
-        $this->logger->notice('Registering channels...');
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    public function getId()
+    { 
+        return $this->id;
+    }
+
+    public function getWorker()
+    {
+        return $this->worker; 
+    }
+
+    public function getJournal()
+    {
+        return $this->journal;
+    }
+
+    public function getChannel()
+    { 
+        return $this->channel;
+    }
+
+    public function getCallback()
+    { 
+        return $this->callback;
+    }
+
+    public function getRetry()
+    { 
+        return $this->retry; 
+    }
+
+    public function getMemoryLimit()
+    { 
+        return $this->memoryLimit; 
+    }
+
+    public function getInterationsLimit()
+    { 
+        return $this->interationsLimit;
+    }
+
+    public function getLogger()
+    {
+        return $this->logger;
+    }
+
+    public function work()
+    {
+        $this->log('notice', 'Registering channels...');
         $this->register();
 
-        $this->logger->notice('Waiting for job...');
+        $this->log('notice', 'Waiting for job...');
         $this->loop();
     }
 
-    public function notify($status, $value = null) {
+    public function notify($status, $value = null)
+    {
         switch ($status) {
             case Worker::STATUS_SUCCESS: return $this->success((float)$value);
             case Worker::STATUS_DISCONNECTED: return $this->disconnected();
@@ -96,46 +156,66 @@ class Client {
             case Worker::STATUS_IDLE: return $this->idle();
         }      
     }
+
+    public function shutdown($message = null)
+    {
+        if ( !$this->loop ) return false;
+
+        if ($message) $this->log('notice', sprintf('Loop stopped: %s', $message));
         
-    protected function loop() {
-        while (1) {
+        $this->loop = false;
+        return true;
+    }
+        
+    protected function loop()
+    {
+        $this->loop = true;
+        while ($this->loop) {
             if ( $status = $this->worker->work() ) {
                 $this->notify($status);
             }
+
+            $this->checkStatus();
         }
     }
 
-    protected function error() { 
+    protected function error()
+    { 
         $msg = $this->worker->lastError();
-        $this->logger->notice(sprintf('Gearman error: "%s"', $msg));
+        $this->log('notice', sprintf('Gearman error: "%s"', $msg));
 
         $this->journal->addError($msg); 
     }
 
-    protected function timeout() { 
-        $this->logger->notice('Timeout');
+    protected function timeout()
+    { 
+        $this->log('notice', 'Timeout');
         $this->journal->addTimeout(); 
     } 
     
-    protected function success($secs) {
-        $this->logger->notice(sprintf('Executed job in %f sec(s)', $secs));
+    protected function success($secs)
+    {
+        $this->log('notice', sprintf('Executed job in %f sec(s)', $secs));
         $this->journal->addSuccess($secs); 
     }
 
-    protected function idle() {
-        $this->logger->debug('Waiting for job...');
+    protected function idle()
+    {
+        $this->log('debug', 'Waiting for job...');
         $this->journal->addIdle(); 
     }
 
-    protected function disconnected() {
-        $this->logger->notice(sprintf('Connection lost, waiting %s seconds ...', $this->sleepTimeOnError));
+    protected function disconnected()
+    {
+        $this->log('notice', sprintf('Connection lost, waiting %s seconds ...', $this->sleepTimeOnError));
 
         $this->journal->addLostConnection($this->disconnectedSleep);
         sleep($this->disconnectedSleep); 
         $this->idle();
     }
 
-    protected function register() {
+    protected function register()
+    {
         $control = new ControlChannel($this, 'control_%s');
         $control->register($this->worker);
 
@@ -145,11 +225,32 @@ class Client {
         $request->register($this->worker);
     }
 
-    public function getLogger() {
-        return $this->logger;
+    protected function checkStatus()
+    {
+        if ( $this->memoryLimit ) {
+            $memory = memory_get_usage(true);
+            if ( $memory >= $this->memoryLimit ) {
+                return $this->shutdown(sprintf(
+                    'Memory limit reached %d bytes (%d bytes limit)',
+                    $memory, $this->memoryLimit
+                ));
+            }
+        }
+
+        if ( $this->interationsLimit ) {
+            $iterations = $this->journal->getWorks();
+            if ( $iterations > $this->interationsLimit ) {
+                return $this->shutdown(sprintf(
+                    'Iteration limit reached %d times (%d limit)',
+                    $iterations, $this->interationsLimit
+                ));
+            }
+        }
     }
 
-    public function shutdown() {
-        exit();
+    protected function log($type, $message)
+    {
+        if ( !$this->logger ) return false;
+        return $this->logger->$type($message);
     }
 }

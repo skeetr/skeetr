@@ -6,11 +6,9 @@ use Skeetr\Mocks\Gearman\Worker;
 use Skeetr\Mocks\Logger;
 
 class Client extends ClientMocked {
-    public function __construct(LoggerInterface $logger = null, Worker $worker = null)
+    public function __construct(Worker $worker = null)
     {
-        $worker = new Worker();
-        $logger = new Logger();
-        return parent::__construct($logger, $worker);
+        return parent::__construct(new Worker);
     }
 
     public function getTime()
@@ -21,10 +19,5 @@ class Client extends ClientMocked {
     public function notify($status, $value = null)
     { 
         $this->time = $value;
-    }
-
-    public function shutdown()
-    {
-        return 'exit';
     }
 }
