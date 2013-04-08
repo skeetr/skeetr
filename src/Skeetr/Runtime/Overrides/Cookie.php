@@ -21,7 +21,8 @@ use Skeetr\HTTP\Response;
  *
  * [+] = Implemented [-] = Original 
  */
-class Cookie extends Override {
+class Cookie extends Override 
+{
     /**
      * Defines a cookie to be sent along with the rest of the HTTP headers.
      *
@@ -33,7 +34,7 @@ class Cookie extends Override {
      * @param string $path (optional) The path on the server in which the cookie will be available on.
      * @param string $domain (optional) The domain that the cookie is available to.
      * @param boolean $secure (optional) Indicates that the cookie should only be transmitted over a secure HTTPS connection from the client.
-     * @param boolean $secure (optional) When TRUE the cookie will be made accessible only through the HTTP protocol.
+     * @param boolean $httponly (optional) When TRUE the cookie will be made accessible only through the HTTP protocol.
      * @return boolean
      */
     final static public function setcookie(

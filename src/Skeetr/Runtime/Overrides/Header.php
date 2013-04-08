@@ -24,7 +24,8 @@ use Skeetr\HTTP\Response;
  *
  * [+] = Implemented [-] = Original 
  */
-class Header extends Override {
+class Header extends Override
+{
     static private $list;
     static private $code;
     static private $callback;
@@ -39,7 +40,8 @@ class Header extends Override {
      * @param boolean $http_response_code (optional) Forces the HTTP response code to the specified value.
      * @return boolean
      */
-    final static public function header($string, $replace = true, $http_response_code = null) {
+    final static public function header($string, $replace = true, $http_response_code = null) 
+    {
         if ( !$headers = http_parse_headers($string) ) Returns;
         $header = key($headers);
 
@@ -60,7 +62,8 @@ class Header extends Override {
      *
      * @param string $name (optional) The header name to be removed. If empty removes all.
      */
-    final static public function header_remove($name = null) {
+    final static public function header_remove($name = null)
+    {
         if ( $name ) unset(self::$list[$name]);
         else self::$list = array();
     }
@@ -72,7 +75,8 @@ class Header extends Override {
      *
      * @return array Returns a numerically indexed array of headers.
      */
-    final static public function headers_list() {
+    final static public function headers_list()
+    {
         $results = array();
         foreach(self::$list as $headers) {
             $results = array_merge($results, $headers);
@@ -88,7 +92,8 @@ class Header extends Override {
      *
      * @param callback $callback Function called just before the headers are sent. It gets no parameters and the return value is ignored.
      */
-    final static public function header_register_callback($callback) {
+    final static public function header_register_callback($callback)
+    {
         if ( !is_callable($callback) ) return null;
         self::$callback = $callback;
     }
@@ -102,14 +107,16 @@ class Header extends Override {
      * @param string $line
      * @return boolean
      */
-    final static public function headers_sent(&$file = null, &$line = null) {
+    final static public function headers_sent(&$file = null, &$line = null)
+    {
         return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    static public function reset() {
+    static public function reset()
+    {
         self::$list = array();
         self::$code = 200;
         self::$callback;
@@ -118,7 +125,8 @@ class Header extends Override {
     /**
      * {@inheritdoc}
      */
-    static public function values() {
+    static public function values()
+    {
         return get_class_vars(get_called_class());
     }
 }
