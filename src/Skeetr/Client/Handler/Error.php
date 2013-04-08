@@ -1,4 +1,13 @@
 <?php
+/*
+ * This file is part of the Skeetr package.
+ *
+ * (c) Máximo Cuadros <maximo@yunait.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Skeetr\Client\Handler;
 use Psr\Log\LoggerInterface;
 
@@ -27,10 +36,7 @@ class Error
     );
 
     private $level;
-
     private $reservedMemory;
-
-    /** @var LoggerInterface */
     private static $logger;
 
     /**
@@ -54,26 +60,58 @@ class Error
         return $handler;
     }
 
-    public function setLevel($level)
+    /**
+     * Return the logger instance
+     *
+     * @return LoggerInterface 
+     */
+    public static function getLogger()
     {
-        if ( $level === null ) $level = error_reporting();
-        $this->level = $level;
+        return self::$logger;
     }
 
+    /**
+     * Configure the logger used by the error handler
+     *
+     * @param LoggerInterface $logger 
+     */
     public static function setLogger(LoggerInterface $logger)
     {
         self::$logger = $logger;
     }
 
     /**
+     * Returns the minimum error level
+     *
+     * @return integer 
+     */
+    public function getLevel()
+    {
+        return $this->level;
+    }
+
+    /**
+     * Configure the minimum error level
+     *
+     * @param integer $level 
+     */
+    public function setLevel($level)
+    {
+        if ( $level === null ) $level = error_reporting();
+        $this->level = $level;
+    }
+
+    /**
+     * This method will be used by set_error_handler
+     *
      * @throws \ErrorException When error_reporting returns error
      */
     public function handle($level, $message, $file, $line, $context)
     {
-        if ( $this->level === 0 ) return false;
+        if ( $this->level === 0 ) return true;
 
         if ( $level & (E_USER_DEPRECATED | E_DEPRECATED) ) {
-            if (null !== self::$logger) {
+            if (self::$logger !== null) {
                 if ( version_compare(PHP_VERSION, '5.4', '<') ) {
                     $stack = array_slice(debug_backtrace(false), 0, 10);
                 } else {
@@ -90,26 +128,23 @@ class Error
         }
 
         if ( error_reporting() & $level && $this->level & $level ) {
-            $warning = isset($this->levels[$level]) ? $this->levels[$level] : $level;
-
-            $string = sprintf('%s: %s in %s line %d', $warning, $message, $file, $line);
-            self::$logger->warning($warning);
-
-            throw new \ErrorException($string, 0, $level, $file, $line);
+            $this->generateErrorException($level, $message, $file, $line, false);
         }
 
-        return false;
+        return true;
     }
 
+    /**
+     * This method will be used by register_shutdown_function
+     */
     public function handleFatal()
     {
-        if (null === $error = error_get_last()) {
-            return;
-        }
+        $error = error_get_last();
+        if ($error === null) return;
 
         unset($this->reservedMemory);
         $type = $error['type'];
-        if (0 === $this->level || !in_array($type, array(E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE))) {
+        if ( $this->level === 0 || !in_array($type, array(E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE))) {
             return;
         }
 
@@ -121,23 +156,39 @@ class Error
             is_array($exceptionHandler) && 
             $exceptionHandler[0] instanceof Error
         ) { 
-            $level = isset($this->levels[$type]) ? $this->levels[$type] : $type;
-            $message = sprintf('%s: %s in %s line %d', $level, $error['message'], $error['file'], $error['line']);
-            throw new \ErrorException($message, 0, $type, $error['file'], $error['line']);
-           // $exceptionHandler[0]->handle($exception);
+            $this->generateErrorException($type, $error['message'], $error['file'], $error['line']);
         }
     }
 
     /**
-     * Sends a Response for the given Exception.
+     * This handler will get all the Excpetion, out of a try/catch
      *
-     * @param \Exception $exception An \Exception instance
+     * @param \Exception $exception
      */
     public function handleException(\Exception $exception)
     {
-               self::$logger->warning($exception->getMessage());
-
-        //$this->createResponse($exception)->send();
+        self::printException($exception);
     }
 
+    private function generateErrorException($type, $message, $file, $line, $fatal = true)
+    {
+        $level = isset($this->levels[$type]) ? $this->levels[$type] : $type;
+        $text = sprintf('%s: %s in %s line %d', $level, $message, $file, $line);
+
+        $exception = new \ErrorException($text, 0, $type, $file, $line);
+        self::printException($exception, $fatal);
+        return $exception;
+    }
+
+
+    /**
+     * This handler will get all the Excpetion, out of a try/catch
+     *
+     * @param \Exception $exception
+     */
+    public static function printException(\Exception $exception, $fatal = true)
+    {
+        self::$logger->error($exception->getMessage(), get_object_vars($exception));
+        if ( $fatal ) self::$logger->notice('Execution will stop due to the previous exception');
+    }
 }

@@ -12,6 +12,7 @@ namespace Skeetr\Client\Channels;
 use Skeetr\Client\Channel;
 use Skeetr\Client\HTTP\Request;
 use Skeetr\Client\HTTP\Response;
+use Skeetr\Client\Handler\Error;
 
 use Skeetr\Gearman\Worker;
 use Skeetr\Runtime\Manager;
@@ -77,6 +78,8 @@ class RequestChannel extends Channel
         try {
             return call_user_func($this->callback, $request, $response);
         } catch (\Exception $e) {
+            //TODO: Maybe implement something more complex, with better error reporting?
+            Error::printException($e, false);
             return 'ERROR: ' . $e->getMessage();   
         }
     }
@@ -101,7 +104,7 @@ class RequestChannel extends Channel
             if ( isset($values['header']['list']) ) {
                 foreach( $values['header']['list'] as $headers ) {
                     foreach ($headers as $header) {
-                        $response->addHeader($header, true);
+                        $response->addHeader($header, false);
                     }
                 }
             }

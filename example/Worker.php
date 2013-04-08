@@ -16,18 +16,23 @@ $logger->pushHandler(new StreamHandler('php://stdout', Logger::INFO));
 Error::register();
 Error::setLogger($logger);
 
+/*
 $debugger = new Debugger($logger);
 $debugger->run();
+*/
 
 $worker = new Worker();
 $worker->addServer('front-1.iunait.es', 4730);
 
-$client = new Client($logger, $worker);
+$client = new Client($worker);
+$client->setLogger($logger);
 $client->setCallback(function($request, $response) use ($logger) { 
     session_start();
     if ( !isset($_SESSION['count']) ) $_SESSION['count'] = 0;
     $_SESSION['count']++;
 
+    throw new \Exception("Error Processing Request", 1);
+    
 
     header('Foo: boo');
     setcookie('foo', 'bar');
