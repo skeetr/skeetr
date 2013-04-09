@@ -6,14 +6,16 @@ use Skeetr\Gearman\Worker;
 class WorkerTest extends TestCase {
     public function createWorker() {
         $this->mock = $this->getMock('GearmanWorker');
+        $this->mock->expects($this->any())
+             ->method('addFunction')
+             ->will($this->returnValue(true));
 
         $worker = new WorkerMock();
         $worker->setWorker($this->mock);
 
-
-
         return $worker;
     }
+
     public function testAddServer() {
         $worker = $this->createWorker();
         $worker->addServer();
@@ -25,6 +27,12 @@ class WorkerTest extends TestCase {
         );
 
         $this->assertSame($expect, $worker->getServers());
+    }
+
+    public function testAddFunction()
+    {
+        $worker = $this->createWorker();
+        $this->assertTrue($worker->addFunction('test', function() {}, $worker, 3));
     }
 
     public function testGetLastError() {

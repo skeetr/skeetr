@@ -4,7 +4,8 @@ use Skeetr\Tests\TestCase;
 use Skeetr\Gearman\Monitor;
 
 class MonitorTest extends TestCase {
-    public function testAddServer() {
+    public function testAddServerAndGetConnection()
+    {
         $monitor = new Monitor();
         $monitor->addServer();
         $monitor->addServer('foo', 1111);
@@ -14,7 +15,7 @@ class MonitorTest extends TestCase {
             'foo:1111'
         );
 
-        $this->assertSame($expect, $monitor->getServers());
+        $this->assertSame($expect, $monitor->getServers());        
     }
 
     public function testSetTimeout() {

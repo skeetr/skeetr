@@ -22,14 +22,15 @@ class Worker {
     protected $registered;
     protected $instance;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->instance = new \GearmanWorker;
         $this->instance->addOptions(GEARMAN_WORKER_NON_BLOCKING);
         $this->instance->setTimeout(self::CONF_TIMEOUT);
     }
 
-    public function getServers() { return $this->servers; }
-    public function addServer($host = '127.0.0.1', $port = 4730) {
+    public function addServer($host = '127.0.0.1', $port = 4730)
+    {
         if ( !$host ) throw new \InvalidArgumentException('Invalid hostname');
         if ( (int)$port == 0 ) throw new \InvalidArgumentException('Invalid port');
 
@@ -39,21 +40,30 @@ class Worker {
         return $this->instance->addServer($host, $port);
     }
 
-    public function addFunction($function, $callback, &$context, $timeout) {
+    public function getServers()
+    { 
+        return $this->servers; 
+    }
+
+    public function addFunction($function, $callback, &$context, $timeout)
+    {
         $this->registered = true;
         return $this->instance->addFunction($function, $callback, $context, $timeout);
     }
 
-    public function getLastError() {
+    public function getLastError()
+    {
         return $this->instance->error();
     }
 
-    public function work() {
+    public function work()
+    {
         $this->instance->work();
         return $this->evaluate($this->instance->returnCode());
     }
 
-    protected function evaluate($code) {
+    protected function evaluate($code)
+    {
         switch ($code) {
             case GEARMAN_IO_WAIT:
             case GEARMAN_NO_JOBS:
@@ -72,7 +82,8 @@ class Worker {
         }  
     }
 
-    public function __destruct() {
+    public function __destruct()
+    {
         if ( !$this->registered ) return;
         $this->instance->unregisterAll();
     }
