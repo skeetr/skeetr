@@ -32,12 +32,6 @@ class RequestChannel extends Channel
         $this->callback = $callback;
     }
 
-    public function enableRuntime($status = null)
-    {
-        if ( $status !== null ) $this->runtime = $status;
-        return $this->runtime;
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -64,8 +58,18 @@ class RequestChannel extends Channel
         $request = Request::fromJSON($job->workload());
         $response = new Response;
 
-        $result = $this->runCallback($request, $response);
-        if ( $result ) $response->setBody($result);
+        try {
+            $result = $this->runCallback($request, $response);
+            $response->setBody($result);
+
+        } catch (\Exception $e) {
+            //TODO: Maybe implement something more complex, with better error reporting?
+            Error::printException($e, false);
+
+            $response->setBody(sprintf('Error: %s', $e->getMessage()));
+            $response->setResponseCode(500);
+        }
+
         $this->prepareResponse($response);
 
         $this->client->notify(Worker::STATUS_SUCCESS, microtime(true) - $start);
@@ -75,13 +79,7 @@ class RequestChannel extends Channel
 
     private function runCallback(Request $request, Response $response)
     {
-        try {
-            return call_user_func($this->callback, $request, $response);
-        } catch (\Exception $e) {
-            //TODO: Maybe implement something more complex, with better error reporting?
-            Error::printException($e, false);
-            return 'ERROR: ' . $e->getMessage();   
-        }
+        return call_user_func($this->callback, $request, $response);
     }
 
     /**
@@ -97,7 +95,7 @@ class RequestChannel extends Channel
 
         $values = Manager::values();
         if ( isset($values['header']) ) {
-            if ( isset($values['header']['code']) ) {
+            if ( isset($values['header']['code']) && $values['header']['code'] ) {
                 $response->setResponseCode($values['header']['code']);
             } 
 

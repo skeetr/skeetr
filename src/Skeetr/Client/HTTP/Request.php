@@ -42,7 +42,7 @@ class Request extends HttpMessage
 
         if ( !$data = json_decode($json, true) ) {
             throw new \UnexpectedValueException(sprintf(
-                'Unexpected message, invalid JSON from nginx: "%s"', $message
+                'Unexpected message, invalid JSON from nginx: "%s"', $json
             ));
         }
 

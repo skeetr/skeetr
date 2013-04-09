@@ -118,7 +118,7 @@ class Header extends Override
     static public function reset()
     {
         self::$list = array();
-        self::$code = 200;
+        self::$code = null;
         self::$callback;
     }
     

@@ -26,7 +26,7 @@ class HeaderTest extends TestCase {
 
     public function testHeaderCode() {
         $values = Manager::values();
-        $this->assertSame(200, $values['header']['code']);
+        $this->assertSame(null, $values['header']['code']);
     }
 
     public function testHeaderWithLocation() {

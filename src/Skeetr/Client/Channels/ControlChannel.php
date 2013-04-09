@@ -58,7 +58,7 @@ class ControlChannel extends Channel
      * @param array $command
      * @return array the response 
      */
-    protected function executeCommand($command)
+    private function executeCommand($command)
     {
         if ( !is_array($command) || !isset($command['command']) ) {
             return $this->returnError('Malformed command received.');
@@ -77,7 +77,7 @@ class ControlChannel extends Channel
      * @param array $command
      * @return array the response 
      */
-    protected function commandJournal($options)
+    private function commandJournal($options)
     {
         return $this->client->getJournal()->getData();
     }
@@ -88,7 +88,7 @@ class ControlChannel extends Channel
      * @param array $command
      * @return boolean the response 
      */
-    protected function commandShutdown($options)
+    private function commandShutdown($options)
     {
         return array(
             'result' => $this->client->shutdown()
@@ -101,7 +101,7 @@ class ControlChannel extends Channel
      * @param string $message
      * @return array the response 
      */
-    protected function returnError($message)
+    private function returnError($message)
     {
         return array(
             'error' => $message

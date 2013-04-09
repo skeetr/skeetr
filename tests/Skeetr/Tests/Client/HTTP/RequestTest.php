@@ -20,6 +20,14 @@ class RequestTest extends TestCase
         return Request::fromJSON($json);
     }
 
+    /**
+     * @expectedException UnexpectedValueException
+     */
+    public function testFromJSONInvalid()
+    {
+        Request::fromJSON('noJSON');
+    }
+
     public function testGetTimestamp()
     {
         $r = $this->getRequest('GET');
@@ -93,7 +101,22 @@ class RequestTest extends TestCase
 
         $this->assertSame($expected, $this->getRequest('POST')->getPostFields());
         $this->assertSame($expected, $_POST);
+    }
 
+    /**
+     * @expectedException Exception
+     */
+    public function testGetPostFiles()
+    {
+        $this->getRequest('POST')->getPostFiles();
+    }
+
+    /**
+     * @expectedException Exception
+     */
+    public function testSetPostFiles()
+    {
+        $this->getRequest('POST')->setPostFiles(array());
     }
 
     public function testGetQueryFields()

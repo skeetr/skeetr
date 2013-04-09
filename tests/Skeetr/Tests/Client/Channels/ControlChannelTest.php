@@ -53,4 +53,35 @@ class ControlChannelTest extends TestCase
         $data = json_decode($json, true);
         $this->assertTrue(isset($data['result']));   
     }
+
+    public function testUnknownCommand()
+    {
+        $client = new Client;
+
+        $channel = new ControlChannel($client, 'foo');
+
+        $job = new GearmanJob;
+        $job->setWorkload(json_encode(array('command' => 'unknown')));
+
+        $json = $channel->process($job);
+        $data = json_decode($json, true);
+
+        $this->assertSame('Unknown command.', $data['error']);   
+    }
+
+
+    public function testJournalMalformedRequest()
+    {
+        $client = new Client;
+
+        $channel = new ControlChannel($client, 'foo');
+
+        $job = new GearmanJob;
+        $job->setWorkload(json_encode(array('foo' => 'bar')));
+
+        $json = $channel->process($job);
+        $data = json_decode($json, true);
+        
+        $this->assertSame('Malformed command received.', $data['error']);     
+    }
 }

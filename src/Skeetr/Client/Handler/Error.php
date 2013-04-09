@@ -139,7 +139,7 @@ class Error
      */
     public function handleFatal()
     {
-        $error = error_get_last();
+        $error = $this->getLastError();
         if ($error === null) return;
 
         unset($this->reservedMemory);
@@ -160,6 +160,11 @@ class Error
         }
     }
 
+    protected function getLastError()
+    {
+        return error_get_last();
+    }
+    
     /**
      * This handler will get all the Excpetion, out of a try/catch
      *
@@ -188,6 +193,8 @@ class Error
      */
     public static function printException(\Exception $exception, $fatal = true)
     {
+        if ( !self::$logger ) return false;
+
         self::$logger->error($exception->getMessage(), get_object_vars($exception));
         if ( $fatal ) self::$logger->notice('Execution will stop due to the previous exception');
     }
