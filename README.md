@@ -11,7 +11,7 @@ Requirements
 * Unix system
 * PECL http 
 * PECL gearman
-* [hp-skeetr](https://github.com/skeetr/php-skeetr)
+* [php-skeetr](https://github.com/skeetr/php-skeetr)
 
 
 Installation
@@ -23,7 +23,7 @@ You can see [package information on Packagist.](https://packagist.org/packages/m
 ```JSON
 {
     "require": {
-        "skeetr/skeetr": "dev"
+        "skeetr/skeetr": "dev-master"
     }
 }
 ```
