@@ -18,7 +18,6 @@ class ClientTest extends TestCase {
         $client = new ClientMock(new Worker);
         $client->setCallback(function() {});
         $client->setLogger($this->logger);
-
         return $client;
     }
     
@@ -197,12 +196,22 @@ class ClientTest extends TestCase {
         $this->assertContains('Waiting for job', $last['message']);
     }
 
+    /**
+     * @expectedException UnexpectedValueException
+     */
+    public function testNotifyUnexpected()
+    {
+        $client = $this->createClient();
+        $client->notify('foo');
+    }
+
     public function testWork()
     {
         $client = $this->createClient();
+
         $client->work();
 
-        $this->assertTrue($client->loop);
+        $this->assertSame(1, $client->getJournal()->getWorks());
 
         $channels = $client->getChannels();
         $this->assertInstanceOf('Skeetr\Client\Channels\ControlChannel', $channels['control']);
@@ -215,21 +224,17 @@ class ClientTest extends TestCase {
 
         $this->assertFalse($client->shutdown());
 
-        $client->work();
+        $client->loop = true;
         $this->assertTrue($client->shutdown());
     }
 
     public function testCheckStatusMemoryLimit()
     {
         $client = $this->createClient();
-        
-        $client->work();
-        $this->assertTrue($client->loop);
-
         $client->setMemoryLimit(10);
 
-        $client->work();
-        $this->assertFalse($client->loop);
+        $client->loop = true;
+        $this->assertTrue($client->checkStatus());
 
         $last = end($this->logs);
         $this->assertContains('Memory limit reached', $last['message']);
@@ -240,20 +245,36 @@ class ClientTest extends TestCase {
         $client = $this->createClient();
         
         $client->work();
-        $this->assertTrue($client->loop);
+        $this->assertSame(1, $client->getJournal()->getWorks());
 
-        $client->setInterationsLimit(1);
+        $client->setInterationsLimit(2);
+
+        $client->loop = true;
+        $this->assertNull($client->checkStatus());
 
         $client->work();
-        $this->assertFalse($client->loop);
+        $this->assertSame(2, $client->getJournal()->getWorks());
+
+        $client->loop = true;
+        $this->assertTrue($client->checkStatus());
 
         $last = end($this->logs);
         $this->assertContains('Iteration limit reached', $last['message']);
+    }
+
+    public function testCheckStatusEmpty()
+    {
+        $client = $this->createClient();
+        $client->setInterationsLimit(null);
+        $client->setMemoryLimit(null);
+
+        $this->assertNull($client->checkStatus());
     }
 }
 
 
 class ClientMock extends Client {
+    protected $interationsLimit = 1;
     public $loop = false;
 
     public function getChannels()
@@ -266,11 +287,8 @@ class ClientMock extends Client {
         return parent::evaluate($code);
     }
 
-    protected function loop()
+    public function checkStatus()
     {
-        $this->loop = true;
-        $this->notify(Worker::STATUS_SUCCESS);
-
-        $this->checkStatus();
+        return parent::checkStatus();
     }
 }

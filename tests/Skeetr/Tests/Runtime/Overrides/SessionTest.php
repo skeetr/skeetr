@@ -2,6 +2,7 @@
 namespace Skeetr\Tests\Runtime\Overrides;
 use Skeetr\Tests\TestCase;
 use Skeetr\Runtime\Manager;
+use Skeetr\Runtime\Overrides\Session;
 
 class SessionTest extends TestCase {
     public function testSessionId() {
@@ -9,6 +10,19 @@ class SessionTest extends TestCase {
 
         session_start();
         $this->assertTrue(strlen(session_id()) > 0);
+    }
+
+    public function testSessionStartWithId() {
+        session_name('test');
+        $_COOKIE['test'] = 'id';
+
+        session_start();
+        $values = Session::values();
+
+        $this->assertSame('id', $values['id']);
+
+        session_write_close();
+        session_start();
     }
 
     public function testSessionStatus() {
@@ -30,6 +44,34 @@ class SessionTest extends TestCase {
         $data = unserialize(file_get_contents($file));
 
         $this->assertSame('bar', $data['foo']);
+    }
+
+    public function testSessionWriteCloseWithHandler() {
+        $handler = $this->getMock('SessionHandlerInterface');
+
+        $close = false;
+        $handler->expects($this->any())
+            ->method('close')
+            ->will($this->returnCallback(function() use (&$close) { $close = true; }));
+
+        $write = false;
+        $handler->expects($this->any())
+            ->method('write')
+            ->will($this->returnCallback(function() use (&$write) { $write = true; }));
+
+        session_set_save_handler($handler);
+        session_start();
+        $_SESSION['foo'] = 'bar';
+
+        session_write_close();
+
+        $file = sprintf('%s/sess_%s', sys_get_temp_dir(), session_id());
+        $data = unserialize(file_get_contents($file));
+
+        $this->assertSame('bar', $data['foo']);
+
+        $this->assertTrue($close);
+        $this->assertTrue($write);
     }
 
     public function testSessionDestroy() {
@@ -93,5 +135,23 @@ class SessionTest extends TestCase {
         $new = session_id();
 
         $this->assertFalse($old == $new); 
+    }
+
+    public function testSessionSetCookieParams()
+    {
+        session_set_cookie_params(314159, '/foo/bar', 'foo.com', true, true);
+
+        $this->assertSame('314159', ini_get('session.cookie_lifetime'));
+        $this->assertSame('/foo/bar', ini_get('session.cookie_path'));
+        $this->assertSame('foo.com', ini_get('session.cookie_domain'));
+        $this->assertSame('1', ini_get('session.cookie_secure'));
+        $this->assertSame('1', ini_get('session.cookie_httponly'));
+
+        $config = session_get_cookie_params();
+        $this->assertSame(314159, $config['lifetime']);
+        $this->assertSame('/foo/bar', $config['path']);
+        $this->assertSame('foo.com', $config['domain']);
+        $this->assertTrue($config['secure']);
+        $this->assertTrue($config['httponly']);
     }
 }

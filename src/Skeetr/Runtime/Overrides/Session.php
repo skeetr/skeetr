@@ -179,6 +179,7 @@ class Session extends Override
             self::$handler->close();
         }
 
+        self::$started = false;
         file_put_contents(self::$file, self::session_encode());
     }
 

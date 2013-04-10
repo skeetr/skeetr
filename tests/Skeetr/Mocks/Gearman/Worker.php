@@ -22,4 +22,8 @@ class Worker extends WorkerMocked {
     public function lastError() {
         return 'mocked error';
     }
+
+    public function work() {
+        return WorkerMocked::STATUS_SUCCESS;
+    }
 }

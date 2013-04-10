@@ -289,6 +289,8 @@ class Client
             case Worker::STATUS_TIMEOUT: return $this->timeout();
             case Worker::STATUS_ERROR: return $this->error();
             case Worker::STATUS_IDLE: return $this->idle();
+            default:
+                throw new \UnexpectedValueException(sprintf('Unexpected status: "%"', $status));
         }      
     }
         
@@ -366,13 +368,15 @@ class Client
 
         if ( $this->interationsLimit ) {
             $iterations = $this->journal->getWorks();
-            if ( $iterations > $this->interationsLimit ) {
+            if ( $iterations >= $this->interationsLimit ) {
                 return $this->shutdown(sprintf(
                     'Iteration limit reached %d times (%d limit)',
                     $iterations, $this->interationsLimit
                 ));
             }
         }
+
+        return null;
     }
 
     protected function log($type, $message)

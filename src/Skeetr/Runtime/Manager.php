@@ -50,15 +50,7 @@ class Manager {
             if ( !function_exists($function) ) continue;
 
             $call = static::getCall($class, $function);
-            if ( !skeetr_override_function(
-                $call['function'], 
-                $call['args'], 
-                $call['code']
-            )) {
-                throw new \RuntimeException(
-                    sprintf('Unable to override builtin function %s', $call['function'])
-                );
-            }
+            skeetr_override_function($call['function'], $call['args'], $call['code']);
 
             $functions[$function] = 1;
         }

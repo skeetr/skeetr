@@ -15,6 +15,8 @@ class ManagerTest extends TestCase {
     }
 
     public function testRegisterResetAndValues() {
+        $this->assertFalse(Manager::overridden('natcasesort'));
+
         Manager::register('\Skeetr\Tests\Runtime\Example');
 
         $function = new \ReflectionFunction('natcasesort');
@@ -22,6 +24,8 @@ class ManagerTest extends TestCase {
 
         $this->assertSame('foo', natcasesort('foo'));
         $this->assertTrue(Manager::overridden('natcasesort'));
+
+
         $this->assertSame(1, Example::$test);
 
         Example::$test = 0;
@@ -55,6 +59,13 @@ class ManagerTest extends TestCase {
      */
     public function testRegisterOther() {
         Manager::register('\Skeetr\Tests\TestCase');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testRegisterEmpty() {
+        Manager::register('\Skeetr\Tests\Runtime\ExampleEmpty');
     }
 
     /**
@@ -123,5 +134,14 @@ class Example extends Override {
 
     final static function natcasesort($mandatory, $optionalNull = null, $optionalString = '2') {
         return $mandatory;
+    }
+}
+
+
+class ExampleEmpty extends Override {
+    static public $test = 0;
+
+    static public function reset() {
+        self::$test = 1;
     }
 }
