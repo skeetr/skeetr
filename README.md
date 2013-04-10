@@ -1,4 +1,4 @@
-Skeetr [![Build Status](https://travis-ci.org/mcuadros/cli-array-editor.png?branch=master)](https://travis-ci.org/skeetr/skeetr)
+Skeetr [![Build Status](https://travis-ci.org/skeetr/skeetr.png?branch=master)](https://travis-ci.org/skeetr/skeetr)
 ==============================
 
 PHP Application Server based on Gearmand + Nginx, your PHP faster than ever. 
@@ -17,8 +17,8 @@ Requirements
 Installation
 ------------
 
-The recommended way to install CLIArrayEditor is [through composer](http://getcomposer.org).
-You can see [package information on Packagist.](https://packagist.org/packages/mcuadros/cli-array-editor)
+The recommended way to install skeetr/skeetr is [through composer](http://getcomposer.org).
+You can see [package information on Packagist.](https://packagist.org/packages/skeetr/skeetr)
 
 ```JSON
 {
