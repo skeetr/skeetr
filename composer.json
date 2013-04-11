@@ -21,6 +21,7 @@
         "psr/log": "1.0.0"
     },
     "require-dev": {
+        "sami/sami": "1.0.*@dev",
         "symfony/process": "v2.2.0",
         "monolog/monolog": "1.4.0"
     },
@@ -28,5 +29,13 @@
         "psr-0": {
             "Skeetr": "src/"
         }
+    },
+    "scripts": {
+        "post-update-cmd": [
+            "php vendor/sami/sami/sami.php update doc/config.php"
+        ],
+        "post-install-cmd": [
+            "php vendor/sami/sami/sami.php update doc/config.php"
+        ]
     }
 }

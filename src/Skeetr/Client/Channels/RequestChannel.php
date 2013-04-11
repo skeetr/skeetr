@@ -61,7 +61,6 @@ class RequestChannel extends Channel
         try {
             $result = $this->runCallback($request, $response);
             $response->setBody($result);
-
         } catch (\Exception $e) {
             //TODO: Maybe implement something more complex, with better error reporting?
             Error::printException($e, false);
