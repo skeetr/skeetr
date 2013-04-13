@@ -1,5 +1,5 @@
-doc/cache
-doc/build
+doc
 composer.lock
 vendor
 *.swp
+
