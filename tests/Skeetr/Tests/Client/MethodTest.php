@@ -11,12 +11,12 @@
 namespace Skeetr\Tests;
 
 use Skeetr\Client;
-use Skeetr\Client\Channel;
+use Skeetr\Client\Method;
 use Skeetr\Mocks\Client as ClientMock;
 use Skeetr\Mocks\GearmanJob;
 use Skeetr\Mocks\Gearman\Worker;
 
-class ChannelTest extends TestCase
+class MethodTest extends TestCase
 {
     public function testSetChannel()
     {
@@ -47,7 +47,7 @@ class ChannelTest extends TestCase
     }
 }
 
-class ChannelMock extends Channel
+class MethodMock extends Method
 {
     public function process(\GearmanJob $job) {}
 }

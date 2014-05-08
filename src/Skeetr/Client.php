@@ -15,9 +15,9 @@ use Skeetr\Gearman\Worker;
 use Skeetr\Client\Socket;
 use Skeetr\Client\Journal;
 use Skeetr\Client\Channel;
-use Skeetr\Client\Channels\ControlChannel;
-use Skeetr\Client\Channels\RequestChannel;
+use Skeetr\Client\RPC;
 use Skeetr\Runtime\Manager;
+use RuntimeException;
 
 class Client
 {
@@ -25,8 +25,7 @@ class Client
     protected $interationsLimit;
     protected $sleepTimeOnError = 5;
 
-    protected $channels = array();
-    protected $channelName = 'default';
+    protected $methods = [];
     protected $logger;
     protected $socket;
     protected $callback;
@@ -263,26 +262,56 @@ class Client
      */
     public function work()
     {
+        $this->createdMethods();
         $this->socket->connect();
         $this->log('notice', 'Waiting for client...');
-        $this->socket->waitForConnection()();
+        $this->socket->waitForConnection();
 
         $this->log('notice', 'Waiting for job...');
         $this->loop();
     }
 
+    private function createdMethods()
+    {
+        $process = new RPC\Method\Process($this->callback);
+        $this->addMethod($process);
+    }
+
+    public function addMethod(RPC\Method $method)
+    {
+        $tmp = explode('\\', get_class($method));
+        $this->methods[end($tmp)] = $method;
+    }
+
+    public function getMethod($name)
+    {
+        if (!isset($this->methods[$name])) {
+            throw new RuntimeException(sprintf(
+                'Unable to find RPC method %s', $name
+            ));
+        }
+
+        return $this->methods[$name];
+    }
 
     protected function loop()
     {
         $this->loop = true;
         while ($this->loop) {
-            if ( $status = $this->worker->work() ) {
-                $this->notify($status);
-            }
+            $request = RPC\Request::fromJSON($this->socket->get());
 
-            $this->checkStatus();
+            $result = $this->getMethod($request->getMethod())->execute($request);
+
+            $response = new RPC\Response();
+            $response->setId($request->getId());
+            $response->setResult($result);
+
+            $this->socket->put($response->toJSON());
+
+            //$this->checkStatus();*/
         }
     }
+
     /**
      * Stops the main loop and exits the work function
      *
@@ -291,34 +320,18 @@ class Client
      */
     public function shutdown($message = null)
     {
-        if ( !$this->loop ) return false;
+        if (!$this->loop) {
+            return false;
+        }
 
-        if ($message) $this->log('notice', sprintf('Loop stopped: %s', $message));
+        if ($message) {
+            $this->log('notice', sprintf('Loop stopped: %s', $message));
+        }
 
         $this->loop = false;
 
         return true;
     }
-
-    /**
-     * Receives a notification from the channels and save it to the journal.
-     *
-     * @param integer $status Worker::STATUS_* conts
-     * @param mixed   $value  optional
-     */
-    public function notify($status, $value = null)
-    {
-        switch ($status) {
-            case Worker::STATUS_SUCCESS: return $this->success((float) $value);
-            case Worker::STATUS_DISCONNECTED: return $this->disconnected();
-            case Worker::STATUS_TIMEOUT: return $this->timeout();
-            case Worker::STATUS_ERROR: return $this->error();
-            case Worker::STATUS_IDLE: return $this->idle();
-            default:
-                throw new \UnexpectedValueException(sprintf('Unexpected status: "%"', $status));
-        }
-    }
-
 
     protected function error()
     {

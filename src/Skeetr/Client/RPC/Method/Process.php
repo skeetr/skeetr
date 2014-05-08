@@ -8,27 +8,26 @@
  * file that was distributed with this source code.
  */
 
-namespace Skeetr\Client\Channels;
+namespace Skeetr\Client\RPC\Method;
 
-use Skeetr\Client\Channel;
-use Skeetr\Client\HTTP\Request;
-use Skeetr\Client\HTTP\Response;
+use Skeetr\Client\RPC\Method;
+use Skeetr\Client\RPC\Request;
+use Skeetr\Client\HTTP;
 use Skeetr\Client\Handler\Error;
-use http\Message\Body;
-use Skeetr\Gearman\Worker;
 use Skeetr\Runtime\Manager;
+use http\Message\Body;
 
-class RequestChannel extends Channel
+class Process extends Method
 {
     private $callback;
     private $runtime = true;
 
     /**
-     * Set the callback, this will get called when a job is submitted
+     * Constructor
      *
      * @param callback $callback
      */
-    public function setCallback($callback)
+    public function __construct(Callable $callback)
     {
         $this->callback = $callback;
     }
@@ -36,61 +35,46 @@ class RequestChannel extends Channel
     /**
      * {@inheritdoc}
      */
-    public function register(Worker $worker)
-    {
-        if ( !strlen($this->channel) ) {
-            throw new \InvalidArgumentException('Invalid channel name.');
-        }
-
-        if ( !is_callable($this->callback) ) {
-            throw new \InvalidArgumentException('Invalid callback.');
-        }
-
-        return parent::register($worker);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function process(\GearmanJob $job)
+    public function execute(Request $request)
     {
         $start = microtime(true);
 
-        $request = Request::fromJSON($job->workload());
+        $httpRequest = new HTTP\Request();
 
         $body = new Body();
-        $response = new Response;
-        $response->setBody($body);
+        $httpResponse = new HTTP\Response;
+        $httpResponse->setBody($body);
 
         try {
-            $result = $this->runCallback($request, $response);
+            $result = $this->runCallback($httpRequest, $httpResponse);
             $body->append($result);
         } catch (\Exception $e) {
+            $httpResponse->setResponseCode(500);
+
             //TODO: Maybe implement something more complex, with better error reporting?
             Error::printException($e, false);
             $body->append(sprintf('Error: %s', $e->getMessage()));
-            $response->setResponseCode(500);
         }
 
-        $this->prepareResponse($response);
+        $this->prepareResponse($httpResponse);
 
-        $this->client->notify(Worker::STATUS_SUCCESS, microtime(true) - $start);
-
-        return $response->toJSON();
+        return $httpResponse->toArray();
     }
 
-    private function runCallback(Request $request, Response $response)
+    private function runCallback(HTTP\Request $request, HTTP\Response $response)
     {
-        return call_user_func($this->callback, $request, $response);
+        $cb = $this->callback;
+
+        return $cb($request, $response);
     }
 
     /**
      * Set the headers and the response code to a given $response, class is reset after.
      *
-     * @param  Response $response
+     * @param  HTTP\Response $response
      * @return boolean
      */
-    private function prepareResponse(Response $response)
+    private function prepareResponse(HTTP\Response $response)
     {
         if ( !Manager::loaded() ) return false;
         session_write_close();

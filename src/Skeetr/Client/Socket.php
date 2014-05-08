@@ -10,6 +10,8 @@
 
 namespace Skeetr\Client;
 
+use RuntimeException;
+
 class Socket
 {
     private $path;
@@ -22,10 +24,9 @@ class Socket
     }
 
     public function connect()
-    { 
+    {
         $this->throwExceptionIfPathExists();
         $this->buildServerAndListen();
-        $this->waitForConnection();
     }
 
     private function throwExceptionIfPathExists()
@@ -37,20 +38,20 @@ class Socket
 
     private function buildServerAndListen()
     {
-        $server = socket_create(AF_UNIX, SOCK_STREAM, 0);
-        if (!socket_bind($server, $this->path)) {
+        $this->socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
+        if (!socket_bind($this->socket, $this->path)) {
             throw new RuntimeException(sprintf('Unable to bind to %s', $this->path));
         }
-         
-        if (!socket_listen($server, 0)) {
+
+        if (!socket_listen($this->socket, 0)) {
             throw new RuntimeException('Unable to listen on socket');
         }
     }
 
-    private function waitForConnection()
+    public function waitForConnection()
     {
-        $this->currentClient = socket_accept($server);
-        if (!$this->socket) {
+        $this->currentClient = socket_accept($this->socket);
+        if (!$this->currentClient) {
             throw new RuntimeException('Unable to accept connection');
         }
     }
