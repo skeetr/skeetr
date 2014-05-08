@@ -12,6 +12,7 @@ namespace Skeetr;
 
 use Psr\Log\LoggerInterface;
 use Skeetr\Gearman\Worker;
+use Skeetr\Client\Socket;
 use Skeetr\Client\Journal;
 use Skeetr\Client\Channel;
 use Skeetr\Client\Channels\ControlChannel;
@@ -27,18 +28,18 @@ class Client
     protected $channels = array();
     protected $channelName = 'default';
     protected $logger;
-    protected $gearman;
+    protected $socket;
     protected $callback;
     protected $journal;
     protected $loop;
 
     protected $waitingSince;
 
-    public function __construct(Worker $worker)
+    public function __construct(Socket $socket)
     {
         $this->id = uniqid(null, true);
         $this->journal = new Journal();
-        $this->worker = $worker;
+        $this->socket = $socket;
 
         //TODO: Optional
         Manager::auto();
@@ -262,13 +263,26 @@ class Client
      */
     public function work()
     {
-        $this->log('notice', 'Registering channels...');
-        $this->register();
+        $this->socket->connect();
+        $this->log('notice', 'Waiting for client...');
+        $this->socket->waitForConnection()();
 
         $this->log('notice', 'Waiting for job...');
         $this->loop();
     }
 
+
+    protected function loop()
+    {
+        $this->loop = true;
+        while ($this->loop) {
+            if ( $status = $this->worker->work() ) {
+                $this->notify($status);
+            }
+
+            $this->checkStatus();
+        }
+    }
     /**
      * Stops the main loop and exits the work function
      *
@@ -305,17 +319,6 @@ class Client
         }
     }
 
-    protected function loop()
-    {
-        $this->loop = true;
-        while ($this->loop) {
-            if ( $status = $this->worker->work() ) {
-                $this->notify($status);
-            }
-
-            $this->checkStatus();
-        }
-    }
 
     protected function error()
     {
@@ -350,19 +353,6 @@ class Client
         $this->journal->addLostConnection($this->sleepTimeOnError);
         sleep($this->sleepTimeOnError);
         $this->idle();
-    }
-
-    protected function register()
-    {
-        $control = new ControlChannel($this, 'control_%s');
-        $control->register($this->worker);
-        $this->channels['control'] = $control;
-
-        $request = new RequestChannel($this);
-        $request->setChannel($this->channelName);
-        $request->setCallback($this->callback);
-        $request->register($this->worker);
-        $this->channels['request'] = $request;
     }
 
     protected function checkStatus()
