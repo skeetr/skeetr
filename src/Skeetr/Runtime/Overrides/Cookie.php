@@ -9,8 +9,10 @@
  */
 
 namespace Skeetr\Runtime\Overrides;
+
 use Skeetr\Runtime\Override;
 use Skeetr\HTTP\Response;
+use http;
 
 /**
  * PHP impementation of setcookie and setrawcookie functions
@@ -65,13 +67,21 @@ class Cookie extends Override
         $name, $value, $expire = 0, $path = null, 
         $domain = null, $secure = false, $httponly = false
     ) {
-        $cookie = http_build_cookie(array(
-            'cookies' => array($name => $value),
-            'expires' => $expire,
-            'path' => $path, 
-            'domain' => $domain
-        ));
+        $cookie = new http\Cookie();
+        $cookie->addCookie($name, $value);
+        $cookie->setExpires($expire);
+        $cookie->setPath($path);
+        $cookie->setDomain($domain);
+        $flags = 0;
+        if ($secure) {
+            $flags = Cookie::SECURE;
+        }
 
+        if ($httponly) {
+            $flags = $flags | Cookie::HTTPONLY;
+        }
+
+        $cookie->setFlags($flags);
         Header::header(sprintf('Set-Cookie: %s', $cookie), false);
 
         return true;

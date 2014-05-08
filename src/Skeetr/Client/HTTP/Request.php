@@ -9,24 +9,27 @@
  */
 
 namespace Skeetr\Client\HTTP;
-use HttpMessage;
 
-class Request extends HttpMessage
+use http\Message;
+use http\Cookie;
+
+use UnexpectedValueException;
+
+class Request extends Message
 {
-    protected $timestamp;
-    protected $url;
-    protected $method;
-    protected $version;
-    protected $headers = array();
-    protected $post = array();
-    protected $get = array();
-    protected $server = array();
-    protected $remote = array();
-    protected $cookies = array();
+    private $timestamp;
+    private $url;
+    private $method;
+    private $version;
+    private $post = array();
+    private $get = array();
+    private $server = array();
+    private $remote = array();
+    private $cookies = array();
 
     public function __construct() {
         parent::__construct();
-        $this->setType(HttpMessage::TYPE_REQUEST);
+        $this->setType(Message::TYPE_REQUEST);
     }
 
     /**
@@ -41,7 +44,7 @@ class Request extends HttpMessage
         $request = new static();
 
         if ( !$data = json_decode($json, true) ) {
-            throw new \UnexpectedValueException(sprintf(
+            throw new UnexpectedValueException(sprintf(
                 'Unexpected message, invalid JSON from nginx: "%s"', $json
             ));
         }
@@ -55,8 +58,8 @@ class Request extends HttpMessage
             $request->setHeaders($data['headers']);
 
             //Malformed cookies will return a fatal error
-            if ( $cookies = @http_parse_cookie($request->getHeader('Cookie')) ) {
-                $request->setCookies($cookies->cookies);
+            if ( $cookies = new Cookie($request->getHeader('Cookie')) ) {
+                $request->setCookies($cookies);
             }
         }
 
@@ -130,11 +133,11 @@ class Request extends HttpMessage
      *
      * @param array $headers associative array containing the new HTTP headers
      */
-    public function setHeaders($headers)
+    public function setHeaders(array $headers)
     {
         parent::addHeaders($headers);
 
-        $this->setServerGlobal('HTTP_HOST', (string)parent::getHeader('Host'));
+        $this->setServerGlobal('HTTP_HOST', (string)$this->getHeader('Host'));
         $this->setServerGlobal('HTTP_ACCEPT', (string)$this->getHeader('Accept'));
         $this->setServerGlobal('HTTP_CONNECTION', (string)$this->getHeader('Connection')); 
         $this->setServerGlobal('HTTP_USER_AGENT', (string)$this->getHeader('User-Agent')); 
@@ -176,7 +179,9 @@ class Request extends HttpMessage
     {
         $this->post = $fields;
 
-        parent::setBody(http_build_query($fields));
+        $body = new Message\Body();
+        $body->append(http_build_query($fields));
+        parent::setBody($body);
 
         $_POST = $fields;
         $_REQUEST = array_merge($_GET, $_POST);
@@ -212,10 +217,11 @@ class Request extends HttpMessage
      *
      * @param array $cookies 
      */
-    public function setCookies(array $cookies)
+    public function setCookies(Cookie $cookies)
     {
-        $this->cookies = $cookies;
-        $_COOKIE = $cookies;
+        $data = $cookies->toArray();
+        $this->cookies = $data['cookies'];
+        $_COOKIE = $this->cookies;
     }
 
     /**
@@ -265,7 +271,7 @@ class Request extends HttpMessage
      * @param string $header
      * @return string  
      */
-    public function getHeader($header)
+    public function getHeader($header, $into_class = null)
     { 
         return parent::getHeader($header);
     }

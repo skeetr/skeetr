@@ -1,7 +1,7 @@
 {
     "name": "skeetr/skeetr",
     "homepage": "http://github.com/skeetr/skeetr",
-    "version": "0.0.1-alpha",
+    "version": "0.0.2-alpha",
     "type": "library",
     "description": "PHP Application Server based on Gearmand + Nginx, your PHP faster than ever.",
     "license": "MIT",
@@ -16,7 +16,6 @@
     "require": {
         "php": ">=5.3.0",
         "ext-http": "*",
-        "ext-gearman": "*",
         "ext-skeetr": "*",
         "psr/log": "1.0.0"
     },

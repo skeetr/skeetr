@@ -9,14 +9,18 @@
  */
 
 namespace Skeetr\Client\HTTP;
-use HttpMessage;
+
+use http\Cookie;
+use http\Header;
+use http\Message;
+use http\Message\Body;
 use Skeetr\Runtime\Manager;
 
-class Response extends HttpMessage
+class Response extends Message
 {
     public function __construct() {
         parent::__construct();
-        $this->setType(HttpMessage::TYPE_RESPONSE);
+        $this->setType(Message::TYPE_RESPONSE);
     }
 
     /**
@@ -52,7 +56,7 @@ class Response extends HttpMessage
      * @param array $headers associative array containing the new HTTP headers
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
-    public function setHeaders($headers)
+    public function setHeaders(array $headers)
     {
         return $this->addHeaders($headers, false);
     }
@@ -68,7 +72,7 @@ class Response extends HttpMessage
      *                      overwritten with the new header value
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
-    public function addHeaders($headers, $append = false)
+    public function addHeaders(array $headers, $append = null)
     {
         $data = array();
         foreach($headers as $header => $value) {
@@ -93,7 +97,7 @@ class Response extends HttpMessage
      */
     public function addHeader($header, $append = false)
     {
-        if ( !$headers = http_parse_headers($header) ) return false;
+        if ( !$headers = Header::parse($header) ) return false;
         return $this->addHeaders($headers, $append);
     }
 
@@ -103,7 +107,7 @@ class Response extends HttpMessage
      * @param integer $code HTTP response code
      * @return mixed Returns TRUE on success or the response code is out of range (100-510).
      */
-    public function setResponseCode($code)
+    public function setResponseCode($code, $strict = null)
     {
         return parent::setResponseCode((int)$code);
     }
@@ -114,7 +118,7 @@ class Response extends HttpMessage
      * @param string $body the new body of the message
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
-    public function setBody($body)
+    public function setBody(Body $body)
     {
         parent::setBody($body);
         return $this->addHeaders(array(
@@ -162,19 +166,25 @@ class Response extends HttpMessage
         $name, $value, $expire = 0,  $path = null,
         $domain = null, $secure = false, $httpOnly = false
     ) {
-        $cookie = array(
-            'cookies' => array($name => $value),
-            'flags' => 0,
-            'expires' => $expire,
-            'path' => $path,
-            'domain' => $domain
-        );
 
-        if ($secure) $cookie['flags'] = HTTP_COOKIE_SECURE;
-        if ($httpOnly) $cookie['flags'] = $cookie['flags'] | HTTP_COOKIE_HTTPONLY;
+        $cookie = new Cookie();
+        $cookie->addCookie($name, $value);
+        $cookie->setExpires($expire);
+        $cookie->setPath($path);
+        $cookie->setDomain($domain);
 
+        $flags = 0;
+        if ($secure) {
+            $flags = Cookie::SECURE;
+        }
+
+        if ($httpOnly) {
+            $flags = $flags | Cookie::HTTPONLY;
+        }
+
+        $cookie->setFlags($flags);
         return $this->addHeaders(array(
-            'Set-Cookie' => http_build_cookie($cookie)
+            'Set-Cookie' => $cookie->toString()
         ), true);
     }
 
@@ -194,7 +204,7 @@ class Response extends HttpMessage
      * @param string $header
      * @return string  
      */
-    public function getHeader($header)
+    public function getHeader($header, $infoClass = null)
     { 
         return parent::getHeader($header);
     }
@@ -257,12 +267,16 @@ class Response extends HttpMessage
     public function getCookies()
     { 
         $cookies = parent::getHeader('Set-Cookie');
-        
+
         if ( !$cookies ) return false;
         else if ( $cookies && !is_array($cookies) ) $cookies = array($cookies);
         
-        foreach($cookies as &$cookie) $cookie = http_parse_cookie($cookie);
-        return $cookies; 
+        $result = array();
+        foreach($cookies as $cookie) {
+            $result[] = new Cookie($cookie);
+        }
+
+        return $result; 
     }
 
     /**
@@ -276,7 +290,7 @@ class Response extends HttpMessage
         if ( $default ) $this->setDefaults();
         return array(
             'responseCode' => $this->getResponseCode(),  
-            'body' => $this->getBody(),
+            'body' => $this->getBody()->toString(),
             'headers' => $this->getHeaders()
         ); 
     }

@@ -9,8 +9,10 @@
  */
 
 namespace Skeetr\Tests\Client\HTTP;
+
 use Skeetr\Tests\TestCase;
 use Skeetr\Client\HTTP\Request;
+use http\Message;
 
 class RequestTest extends TestCase
 {
@@ -138,6 +140,7 @@ class RequestTest extends TestCase
     public function testGetCookies()
     {
         $cookies = $this->getRequest('POST')->getCookies();
+
         $this->assertSame('value test', $cookies['cookie']);
         $this->assertSame(array('cookie' => 'value test'), $_COOKIE);
     }
@@ -152,19 +155,18 @@ class RequestTest extends TestCase
     {
         $request = $this->getRequest('POST');
 
-        $message = $request->toString();
-        $array = (array)http_parse_message($message);
+        $message = new Message($request->toString());
 
-        $this->assertSame('/post', $array['requestUrl']);
-        $this->assertSame('POST', $array['requestMethod']);
+        $this->assertSame('/post', $request->getRequestUrl());
+        $this->assertSame('POST', $request->getRequestMethod());
 
-        $this->assertTrue(isset($array['headers']['Host']));
-        $this->assertTrue(isset($array['headers']['Cookie']));
+        $this->assertTrue((bool) $request->getHeader('Host'));
+        $this->assertTrue((bool) $request->getHeader('Cookie'));
 
 
-        $this->assertCount(12, $array['headers']);
+        $this->assertCount(12, $request->getHeaders());
 
-        $this->assertSame("foo=bar&baz=qux\r\n", $array['body']);
+        $this->assertSame("foo=bar&baz=qux", $message->getBody()->toString());
     }
 
     public function testToJSON()

@@ -9,8 +9,10 @@
  */
 
 namespace Skeetr\Runtime\Overrides;
+
 use Skeetr\Runtime\Override;
 use Skeetr\HTTP\Response;
+use http;
 
 /**
  * PHP impementation of header* functions
@@ -42,7 +44,7 @@ class Header extends Override
      */
     final static public function header($string, $replace = true, $http_response_code = null) 
     {
-        if ( !$headers = http_parse_headers($string) ) Returns;
+        if ( !$headers = http\Header::parse($string) ) Returns;
         $header = key($headers);
 
         if ( $replace || !isset(self::$list[$header]) ) {

@@ -9,11 +9,12 @@
  */
 
 namespace Skeetr\Client\Channels;
+
 use Skeetr\Client\Channel;
 use Skeetr\Client\HTTP\Request;
 use Skeetr\Client\HTTP\Response;
 use Skeetr\Client\Handler\Error;
-
+use http\Message\Body;
 use Skeetr\Gearman\Worker;
 use Skeetr\Runtime\Manager;
 
@@ -56,16 +57,18 @@ class RequestChannel extends Channel
         $start = microtime(true);
 
         $request = Request::fromJSON($job->workload());
+        
+        $body = new Body();
         $response = new Response;
+        $response->setBody($body);
 
         try {
             $result = $this->runCallback($request, $response);
-            $response->setBody($result);
+            $body->append($result);
         } catch (\Exception $e) {
             //TODO: Maybe implement something more complex, with better error reporting?
             Error::printException($e, false);
-
-            $response->setBody(sprintf('Error: %s', $e->getMessage()));
+            $body->append(sprintf('Error: %s', $e->getMessage()));
             $response->setResponseCode(500);
         }
 
