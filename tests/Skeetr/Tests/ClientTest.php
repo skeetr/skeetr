@@ -2,29 +2,33 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Skeetr\Tests;
+
 use Skeetr\Client;
 use Skeetr\Client\Journal;
 use Skeetr\Mocks\Gearman\Worker;
 
-class ClientTest extends TestCase {
-    public function createClient() {
+class ClientTest extends TestCase
+{
+    public function createClient()
+    {
         $client = new ClientMock(new Worker);
         $client->setCallback(function() {});
         $client->setLogger($this->logger);
+
         return $client;
     }
-    
+
     public function testGetIdAndSetId()
     {
         $client = $this->createClient();
-        $this->assertTrue((boolean)$client->getId());
+        $this->assertTrue((boolean) $client->getId());
 
         $result = $client->setId('test');
         $this->assertSame('test', $client->getId());
@@ -69,10 +73,10 @@ class ClientTest extends TestCase {
         $this->assertInstanceOf('Skeetr\Client', $result);
     }
 
-    public function testGetMemoryLimitAndSetMemoryLimit() 
+    public function testGetMemoryLimitAndSetMemoryLimit()
     {
         $client = $this->createClient();
-        
+
         $result = $client->setMemoryLimit(5);
         $this->assertSame(5, $client->getMemoryLimit());
 
@@ -82,7 +86,7 @@ class ClientTest extends TestCase {
     public function testGetInterationsLimitAndSetInterationsLimit()
     {
         $client = $this->createClient();
-        
+
         $result = $client->setInterationsLimit(5);
         $this->assertSame(5, $client->getInterationsLimit());
 
@@ -92,12 +96,12 @@ class ClientTest extends TestCase {
     public function testGetSleepTimeOnErrorAndSetSleepTimeOnError()
     {
         $client = $this->createClient();
-        
+
         $result = $client->setSleepTimeOnError(50);
         $this->assertSame(50, $client->getSleepTimeOnError());
 
         $this->assertInstanceOf('Skeetr\Client', $result);
-    }    
+    }
 
     public function testGetLoggerAndSetLogger()
     {
@@ -243,7 +247,7 @@ class ClientTest extends TestCase {
     public function testCheckStatusIterationsLimit()
     {
         $client = $this->createClient();
-        
+
         $client->work();
         $this->assertSame(1, $client->getJournal()->getWorks());
 
@@ -272,8 +276,8 @@ class ClientTest extends TestCase {
     }
 }
 
-
-class ClientMock extends Client {
+class ClientMock extends Client
+{
     protected $interationsLimit = 1;
     public $loop = false;
 

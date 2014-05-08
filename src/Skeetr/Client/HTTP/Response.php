@@ -2,7 +2,7 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -18,7 +18,8 @@ use Skeetr\Runtime\Manager;
 
 class Response extends Message
 {
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $this->setType(Message::TYPE_RESPONSE);
     }
@@ -27,7 +28,8 @@ class Response extends Message
      * Sets the default server and content type headers and response code if
      * not is setted allready.
      */
-    public function setDefaults() {
+    public function setDefaults()
+    {
         if ( !$this->getResponseCode() ) $this->setResponseCode(200);
         if ( !$this->getContentType() ) $this->setContentType('text/html');
         if ( !$this->getServer() ) $this->setServer('Skeetr 0.0.1');
@@ -47,13 +49,14 @@ class Response extends Message
 
         $response->setResponseCode($values['header']['code']);
         $response->setHeaders($values['header']['list'], true);
+
         return $response;
     }
 
     /**
      * Sets the headers.
      *
-     * @param array $headers associative array containing the new HTTP headers
+     * @param  array   $headers associative array containing the new HTTP headers
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
     public function setHeaders(array $headers)
@@ -62,24 +65,24 @@ class Response extends Message
     }
 
     /**
-     * Add headers. If append is true, headers with the same name will be separated, 
+     * Add headers. If append is true, headers with the same name will be separated,
      * else overwritten.
      *
      * @param array $headers associative array containing the new HTTP headers
-     * @param array $append if true, and a header with the same name of one to add exists
-     *                      already, this respective header will be converted to an array 
-     *                      containing both header values, otherwise it will be  
+     * @param array $append  if true, and a header with the same name of one to add exists
+     *                      already, this respective header will be converted to an array
+     *                      containing both header values, otherwise it will be
      *                      overwritten with the new header value
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
     public function addHeaders(array $headers, $append = null)
     {
         $data = array();
-        foreach($headers as $header => $value) {
+        foreach ($headers as $header => $value) {
             if ( is_array($value) ) {
                 foreach($value as $val) $data[$header] = $val;
             } else {
-                $data[$header] = (string)$value;
+                $data[$header] = (string) $value;
             }
         }
 
@@ -87,11 +90,11 @@ class Response extends Message
     }
 
     /**
-     * Add headers. If append is true, headers with the same name will be separated, 
+     * Add headers. If append is true, headers with the same name will be separated,
      * else overwritten.
      *
      * @param string $header just a string with the header
-     * @param array $append if true, and a header of the same type allready exists will
+     * @param array  $append if true, and a header of the same type allready exists will
      *                      append, if false will be replaced.
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
@@ -104,35 +107,37 @@ class Response extends Message
     /**
      * Set the response code of an HTTP Response Message.
      *
-     * @param integer $code HTTP response code
-     * @return mixed Returns TRUE on success or the response code is out of range (100-510).
+     * @param  integer $code HTTP response code
+     * @return mixed   Returns TRUE on success or the response code is out of range (100-510).
      */
     public function setResponseCode($code, $strict = null)
     {
-        return parent::setResponseCode((int)$code);
+        return parent::setResponseCode((int) $code);
     }
 
     /**
      * Set message body
      *
-     * @param string $body the new body of the message
+     * @param  string  $body the new body of the message
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
     public function setBody(Body $body)
     {
         parent::setBody($body);
+
         return $this->addHeaders(array(
-            'Content-Length' => (string)strlen($this->body)
+            'Content-Length' => (string) strlen($this->body)
         ), true);
     }
 
     /**
      * Set content type
      *
-     * @param string $contentType the content type of the sent entity
+     * @param  string  $contentType the content type of the sent entity
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
-    public function setContentType($contentType) {
+    public function setContentType($contentType)
+    {
         return parent::addHeaders(array(
             'Content-Type' => $contentType
         ), false);
@@ -141,10 +146,11 @@ class Response extends Message
     /**
      * Set server name and version
      *
-     * @param string $server
+     * @param  string  $server
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
-    public function setServer($server) {
+    public function setServer($server)
+    {
         return $this->addHeaders(array(
             'Server' => $server
         ), false);
@@ -153,13 +159,13 @@ class Response extends Message
     /**
      * Defines a cookie to be sent along with the rest of the HTTP headers.
      *
-     * @param string $name The name of the cookie.
-     * @param string $value The value of the cookie.
-     * @param integer $expire (optional) The time the cookie expires. This is a Unix timestamp
-     * @param string $path (optional) The path on the server in which the cookie will be available on. 
-     * @param string $domain (optional) The domain that the cookie is available to. 
-     * @param boolean $secure (optional) Indicates that the cookie should only be transmitted over a secure HTTPS connection from the client. 
-     * @param boolean $httpOnly (optional) When TRUE the cookie will be made accessible only through the HTTP protocol.
+     * @param  string  $name     The name of the cookie.
+     * @param  string  $value    The value of the cookie.
+     * @param  integer $expire   (optional) The time the cookie expires. This is a Unix timestamp
+     * @param  string  $path     (optional) The path on the server in which the cookie will be available on.
+     * @param  string  $domain   (optional) The domain that the cookie is available to.
+     * @param  boolean $secure   (optional) Indicates that the cookie should only be transmitted over a secure HTTPS connection from the client.
+     * @param  boolean $httpOnly (optional) When TRUE the cookie will be made accessible only through the HTTP protocol.
      * @return boolean Returns TRUE on success or FALSE on failure.
      */
     public function setCookie(
@@ -183,6 +189,7 @@ class Response extends Message
         }
 
         $cookie->setFlags($flags);
+
         return $this->addHeaders(array(
             'Set-Cookie' => $cookie->toString()
         ), true);
@@ -191,28 +198,28 @@ class Response extends Message
     /**
      * Get headers
      *
-     * @return array 
+     * @return array
      */
     public function getHeaders()
-    { 
-        return parent::getHeaders(); 
+    {
+        return parent::getHeaders();
     }
 
     /**
      * Get a header by name
      *
-     * @param string $header
-     * @return string  
+     * @param  string $header
+     * @return string
      */
     public function getHeader($header, $infoClass = null)
-    { 
+    {
         return parent::getHeader($header);
     }
 
     /**
      * Get the Response Code of the Message.
      *
-     * @return string  
+     * @return string
      */
     public function getResponseCode()
     {
@@ -222,7 +229,7 @@ class Response extends Message
     /**
      * Get message body
      *
-     * @return string  
+     * @return string
      */
     public function getBody()
     {
@@ -232,7 +239,7 @@ class Response extends Message
     /**
      * Get content type
      *
-     * @return string  
+     * @return string
      */
     public function getContentType()
     {
@@ -242,17 +249,17 @@ class Response extends Message
     /**
      * Get content length
      *
-     * @return integer  
+     * @return integer
      */
     public function getContentLength()
     {
-        return (int)parent::getHeader('Content-Length');
+        return (int) parent::getHeader('Content-Length');
     }
 
     /**
      * Get server name
      *
-     * @return string  
+     * @return string
      */
     public function getServer()
     {
@@ -262,55 +269,55 @@ class Response extends Message
     /**
      * Get cookies
      *
-     * @return array  
+     * @return array
      */
     public function getCookies()
-    { 
+    {
         $cookies = parent::getHeader('Set-Cookie');
 
         if ( !$cookies ) return false;
         else if ( $cookies && !is_array($cookies) ) $cookies = array($cookies);
-        
+
         $result = array();
-        foreach($cookies as $cookie) {
+        foreach ($cookies as $cookie) {
             $result[] = new Cookie($cookie);
         }
 
-        return $result; 
+        return $result;
     }
 
     /**
      * Returns a array with the values of this Response
      *
-     * @param boolean $default if TRUE setDefaults() is called
+     * @param  boolean $default if TRUE setDefaults() is called
      * @return array
      */
     public function toArray($default = true)
     {
         if ( $default ) $this->setDefaults();
         return array(
-            'responseCode' => $this->getResponseCode(),  
+            'responseCode' => $this->getResponseCode(),
             'body' => $this->getBody()->toString(),
             'headers' => $this->getHeaders()
-        ); 
+        );
     }
 
     /**
      * Returns a string with the values of this Response
      *
-     * @param boolean $default if TRUE setDefaults() is called
+     * @param  boolean $default if TRUE setDefaults() is called
      * @return string
      */
     public function toString($default = true)
     {
         if ( $default ) $this->setDefaults();
-        return (string)$this;
+        return (string) $this;
     }
 
     /**
      * Returns a JSON with the values of this Response
      *
-     * @param boolean $default if TRUE setDefaults() is called
+     * @param  boolean $default if TRUE setDefaults() is called
      * @return string
      */
     public function toJSON($default = true)

@@ -1,29 +1,36 @@
 <?php
 namespace Skeetr\Mocks\Gearman;
+
 use Skeetr\Gearman\Worker as WorkerMocked;
 use Skeetr\Client\Channel;
 
-class Worker extends WorkerMocked {
-    public function addServer($host = null, $port = null) {
+class Worker extends WorkerMocked
+{
+    public function addServer($host = null, $port = null)
+    {
         return array($host, $port);
     }
 
-    public function addFunction($function, $callback, &$context, $timeout) {
+    public function addFunction($function, $callback, &$context, $timeout)
+    {
         if ( $function != 'test' ) return false;
         if ( !$context instanceOf Channel ) return false;
         if ( $timeout !== 3 ) return false;
         return true;
     }
 
-    public function returnCode() {
+    public function returnCode()
+    {
         return GEARMAN_NO_ACTIVE_FDS;
     }
 
-    public function lastError() {
+    public function lastError()
+    {
         return 'mocked error';
     }
 
-    public function work() {
+    public function work()
+    {
         return WorkerMocked::STATUS_SUCCESS;
     }
 }

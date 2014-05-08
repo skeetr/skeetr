@@ -53,9 +53,9 @@ class JournalTest extends TestCase
         $journal = new Journal();
         $journal->addIdle();
 
-        $idle = $journal->getIdle(); 
+        $idle = $journal->getIdle();
         $this->assertTrue($idle > 0);
-        
+
         $journal->addIdle();
         $this->assertTrue($idle < $journal->getIdle());
     }
@@ -65,7 +65,7 @@ class JournalTest extends TestCase
         $journal = new Journal();
         $this->assertTrue(is_array($journal->getData()));
     }
-    
+
     public function testGetJson()
     {
         $journal = new Journal();

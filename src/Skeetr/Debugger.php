@@ -2,19 +2,20 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Skeetr;
+
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\Process;
-
 use Skeetr\Debugger\Watchers\RecursiveIteratorWatcher;
 
-class Debugger {
+class Debugger
+{
     const FORK_MODE = 'SK_FORK_MODE';
     const CONTROL_MODE = 'SK_CONTROL_MODE';
 
@@ -22,43 +23,50 @@ class Debugger {
     protected $process;
     protected $watcher;
 
-    public function __construct(LoggerInterface $logger) {
+    public function __construct(LoggerInterface $logger)
+    {
         $this->logger = $logger;
     }
 
-    public function run() {
+    public function run()
+    {
         if ( $this->getMode() == self::FORK_MODE ) return;
 
         $this->track();
         $this->start();
     }
 
-    public function getMode() {
+    public function getMode()
+    {
         if ( isset($_SERVER[self::FORK_MODE]) ) return self::FORK_MODE;
         return self::CONTROL_MODE;
     }
 
-    public function isRunning() {
+    public function isRunning()
+    {
         if ( !$this->process ) return false;
         return $this->process->isRunning();
     }
 
-    protected function track() {
+    protected function track()
+    {
         $this->logger->notice('Tracking for file changes ...');
         $this->watcher = new RecursiveIteratorWatcher();
         $this->watcher->addPattern(__DIR__ . '/../../*.php');
         $this->watcher->track();
     }
 
-    protected function start() {
+    protected function start()
+    {
         $this->logger->notice('Running main process ...');
         $this->process = new Process($this->getCommand());
         $this->process->start();
 
-        $this->wait(); 
+        $this->wait();
     }
 
-    protected function restart() {
+    protected function restart()
+    {
         $this->logger->notice('Restarting process, files changed ...');
 
         $this->process->stop();
@@ -67,11 +75,12 @@ class Debugger {
         $this->wait();
     }
 
-    protected function wait() {
-        while ($this->isRunning()) { 
+    protected function wait()
+    {
+        while ($this->isRunning()) {
             if ( $error = $this->getIncrementalErrorOutput() ) {
                 var_dump('----ERROR----', $error, '----ERROR----');
-            } else if ( $output = $this->getIncrementalOutput() ) {
+            } elseif ( $output = $this->getIncrementalOutput() ) {
                 echo $output;
             }
 
@@ -82,11 +91,13 @@ class Debugger {
         }
     }
 
-    protected function getIncrementalOutput() {
+    protected function getIncrementalOutput()
+    {
         return $this->process->getIncrementalOutput();
     }
 
-    protected function getIncrementalErrorOutput() {
+    protected function getIncrementalErrorOutput()
+    {
         $error = '';
         while ( $string = $this->process->getIncrementalErrorOutput() ) {
             $error .= $string;
@@ -95,7 +106,8 @@ class Debugger {
         return $error;
     }
 
-    protected function getCommand() {            
+    protected function getCommand()
+    {
         $command = $_SERVER['_'];
         $path = $_SERVER['PWD'];
         $args = $_SERVER['argv'];
@@ -104,7 +116,7 @@ class Debugger {
             $args[0] = realpath($path . DIRECTORY_SEPARATOR . $args[0]);
         }
 
-        if ( $command != $_SERVER['argv'][0] ) {
+        if ($command != $_SERVER['argv'][0]) {
             array_unshift($args, $command);
         }
 

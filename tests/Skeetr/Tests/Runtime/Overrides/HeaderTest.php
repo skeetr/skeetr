@@ -1,20 +1,24 @@
 <?php
 namespace Skeetr\Tests\Runtime\Overrides;
+
 use Skeetr\Tests\TestCase;
 use Skeetr\Runtime\Manager;
 
-class HeaderTest extends TestCase {
-    public function testHeaderWithReplace() {
+class HeaderTest extends TestCase
+{
+    public function testHeaderWithReplace()
+    {
         header('Foo: bar');
         header('Foo: baz');
 
         $values = Manager::values();
         $expect = array('Foo: baz');
-        
+
         $this->assertSame($expect, $values['header']['list']['Foo']);
     }
 
-    public function testHeaderWithNoReplace() {
+    public function testHeaderWithNoReplace()
+    {
         header('Foo: bar');
         header('Foo: baz', false);
 
@@ -24,26 +28,30 @@ class HeaderTest extends TestCase {
         $this->assertSame($expect, $values['header']['list']['Foo']);
     }
 
-    public function testHeaderCode() {
+    public function testHeaderCode()
+    {
         $values = Manager::values();
         $this->assertSame(null, $values['header']['code']);
     }
 
-    public function testHeaderWithLocation() {
+    public function testHeaderWithLocation()
+    {
         header('Location: http://www.example.com/');
 
         $values = Manager::values();
-        $this->assertSame(302, $values['header']['code']);    
+        $this->assertSame(302, $values['header']['code']);
     }
 
-    public function testHeaderWithCode() {
+    public function testHeaderWithCode()
+    {
         header('Foo: bar', true, 404);
 
         $values = Manager::values();
-        $this->assertSame(404, $values['header']['code']);   
+        $this->assertSame(404, $values['header']['code']);
     }
 
-    public function testHeaderRemove() {
+    public function testHeaderRemove()
+    {
         header('Foo: bar');
         header_remove();
 
@@ -56,13 +64,15 @@ class HeaderTest extends TestCase {
         $this->assertSame(array('Baz: bar'), headers_list());
     }
 
-    public function testHeaderSent() {
+    public function testHeaderSent()
+    {
         $this->assertSame(false, headers_sent());
     }
 
-    public function testHeaderRegisterCallback() {
+    public function testHeaderRegisterCallback()
+    {
         if ( !function_exists('header_register_callback') ) return true;
-        
+
         $callback = function() use (&$called) {
             $called = 1;
         };
@@ -70,6 +80,6 @@ class HeaderTest extends TestCase {
         header_register_callback($callback);
 
         $values = Manager::values();
-        $this->assertSame($callback, $values['header']['callback']); 
+        $this->assertSame($callback, $values['header']['callback']);
     }
 }

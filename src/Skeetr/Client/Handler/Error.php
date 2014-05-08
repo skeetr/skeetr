@@ -2,17 +2,18 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Skeetr\Client\Handler;
+
 use Psr\Log\LoggerInterface;
 
 /**
- * @author Máximo Cuadros <maximo@yunait.com>
+ * @author Máximo Cuadros <mcuadros@gmail.com>
  * @author Fabien Potencier <fabien@symfony.com>
  */
 class Error
@@ -40,11 +41,11 @@ class Error
     private static $logger;
 
     /**
-     * Register the error handler. The level at which the conversion to Exception is done 
+     * Register the error handler. The level at which the conversion to Exception is done
      * (null to use the error_reporting() value and 0 to disable)
      *
-     * @param integer $level 
-     * @return The registered error handler
+     * @param  integer $level
+     * @return The     registered error handler
      */
     public static function register($level = null)
     {
@@ -63,7 +64,7 @@ class Error
     /**
      * Return the logger instance
      *
-     * @return LoggerInterface 
+     * @return LoggerInterface
      */
     public static function getLogger()
     {
@@ -73,7 +74,7 @@ class Error
     /**
      * Configure the logger used by the error handler
      *
-     * @param LoggerInterface $logger 
+     * @param LoggerInterface $logger
      */
     public static function setLogger(LoggerInterface $logger)
     {
@@ -83,7 +84,7 @@ class Error
     /**
      * Returns the minimum error level
      *
-     * @return integer 
+     * @return integer
      */
     public function getLevel()
     {
@@ -93,7 +94,7 @@ class Error
     /**
      * Configure the minimum error level
      *
-     * @param integer $level 
+     * @param integer $level
      */
     public function setLevel($level)
     {
@@ -117,9 +118,9 @@ class Error
                 } else {
                     $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
                 }
-                
+
                 self::$logger->warning($message, array(
-                    'type' => self::TYPE_DEPRECATION, 
+                    'type' => self::TYPE_DEPRECATION,
                     'stack' => $stack
                 ));
             }
@@ -152,10 +153,10 @@ class Error
         $exceptionHandler = set_exception_handler(function() {});
         restore_exception_handler();
 
-        if ( 
-            is_array($exceptionHandler) && 
+        if (
+            is_array($exceptionHandler) &&
             $exceptionHandler[0] instanceof Error
-        ) { 
+        ) {
             $this->generateErrorException($type, $error['message'], $error['file'], $error['line']);
         }
     }
@@ -164,7 +165,7 @@ class Error
     {
         return error_get_last();
     }
-    
+
     /**
      * This handler will get all the Excpetion, out of a try/catch
      *
@@ -182,9 +183,9 @@ class Error
 
         $exception = new \ErrorException($text, 0, $type, $file, $line);
         self::printException($exception, $fatal);
+
         return $exception;
     }
-
 
     /**
      * This handler will get all the Excpetion, out of a try/catch

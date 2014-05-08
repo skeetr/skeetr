@@ -1,10 +1,13 @@
 <?php
 namespace Skeetr\Tests\Gearman;
+
 use Skeetr\Tests\TestCase;
 use Skeetr\Debugger\Watcher;
 
-class WatcherTest extends TestCase {
-    public function testAddPattern() {
+class WatcherTest extends TestCase
+{
+    public function testAddPattern()
+    {
         $watcher = new WatcherMock();
         $watcher->addPattern('foo');
 
@@ -12,7 +15,8 @@ class WatcherTest extends TestCase {
         $this->assertSame($expect, $watcher->getPatterns());
     }
 
-    public function testAddPatterns() {
+    public function testAddPatterns()
+    {
         $watcher = new WatcherMock();
         $watcher->addPatterns(array('foo', 'bar'));
 
@@ -20,7 +24,8 @@ class WatcherTest extends TestCase {
         $this->assertSame($expect, $watcher->getPatterns());
     }
 
-    public function testTrack() {
+    public function testTrack()
+    {
         $watcher = new WatcherMock();
         $watcher->addPattern(__DIR__ . '/*.php');
         $watcher->track();
@@ -29,19 +34,21 @@ class WatcherTest extends TestCase {
     }
 }
 
-
-class WatcherMock extends Watcher {
+class WatcherMock extends Watcher
+{
     protected $files = array();
 
-    public function watch() {
-
+    public function watch()
+    {
     }
 
-    public function getFiles() {
+    public function getFiles()
+    {
         return $this->files;
     }
 
-    protected function trackFile($filename) {
+    protected function trackFile($filename)
+    {
         $this->files[] = $filename;
     }
 }

@@ -26,13 +26,12 @@ $worker->addServer('front-1.iunait.es', 4730);
 
 $client = new Client($worker);
 $client->setLogger($logger);
-$client->setCallback(function($request, $response) use ($logger) { 
+$client->setCallback(function($request, $response) use ($logger) {
     session_start();
     if ( !isset($_SESSION['count']) ) $_SESSION['count'] = 0;
     $_SESSION['count']++;
 
     throw new \Exception("Error Processing Request", 1);
-    
 
     header('Foo: boo');
     setcookie('foo', 'bar');
@@ -40,6 +39,5 @@ $client->setCallback(function($request, $response) use ($logger) {
 
     return 'test' . $_SESSION['count'];
 });
-
 
 $client->work();

@@ -2,16 +2,16 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Skeetr\Tests;
+
 use Skeetr\Client;
 use Skeetr\Client\Channel;
-
 use Skeetr\Mocks\Client as ClientMock;
 use Skeetr\Mocks\GearmanJob;
 use Skeetr\Mocks\Gearman\Worker;

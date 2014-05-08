@@ -1,20 +1,24 @@
 <?php
 namespace Skeetr\Tests\Runtime;
+
 use Skeetr\Tests\TestCase;
 use Skeetr\Runtime\Manager;
 use Skeetr\Runtime\Override;
 
-class ManagerTest extends TestCase {
-    public function testAuto() {
+class ManagerTest extends TestCase
+{
+    public function testAuto()
+    {
         ManagerMock::$loaded = false;
         ManagerMock::$registered = array();
         ManagerMock::auto();
 
         $this->assertSame(3, count(ManagerMock::$registered));
-        $this->assertTrue(class_exists(key(ManagerMock::$registered)));   
+        $this->assertTrue(class_exists(key(ManagerMock::$registered)));
     }
 
-    public function testRegisterResetAndValues() {
+    public function testRegisterResetAndValues()
+    {
         $this->assertFalse(Manager::overridden('natcasesort'));
 
         Manager::register('\Skeetr\Tests\Runtime\Example');
@@ -25,14 +29,13 @@ class ManagerTest extends TestCase {
         $this->assertSame('foo', natcasesort('foo'));
         $this->assertTrue(Manager::overridden('natcasesort'));
 
-
         $this->assertSame(1, Example::$test);
 
         Example::$test = 0;
         Manager::reset();
 
         $this->assertSame(1, Example::$test);
-   
+
         Example::$test = 0;
         Manager::reset('\Skeetr\Tests\Runtime\Example');
 
@@ -41,7 +44,7 @@ class ManagerTest extends TestCase {
 
         $expected = array('example' => array('test' => 1));
         $this->assertSame($expected, Manager::values('\Skeetr\Tests\Runtime\Example'));
-        
+
         $values = Manager::values('\Skeetr\Tests\Runtime\Example');
         $this->assertSame(1, $values['example']['test']);
     }
@@ -49,7 +52,8 @@ class ManagerTest extends TestCase {
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testRegisterTwice() {
+    public function testRegisterTwice()
+    {
         Manager::register('\Skeetr\Runtime\Overrides\Cookie');
         Manager::register('\Skeetr\Runtime\Overrides\Cookie');
     }
@@ -57,25 +61,29 @@ class ManagerTest extends TestCase {
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testRegisterOther() {
+    public function testRegisterOther()
+    {
         Manager::register('\Skeetr\Tests\TestCase');
     }
 
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testRegisterEmpty() {
+    public function testRegisterEmpty()
+    {
         Manager::register('\Skeetr\Tests\Runtime\ExampleEmpty');
     }
 
     /**
      * @expectedException ReflectionException
      */
-    public function testRegisterMissing() {
+    public function testRegisterMissing()
+    {
         Manager::register('\Skeetr\Runtime\Overrides\Missing');
     }
 
-    public function testReadMethod() {
+    public function testReadMethod()
+    {
         $args = ManagerMock::readMethod(
             '\Skeetr\Tests\Runtime\Example', 'natcasesort'
         );
@@ -87,7 +95,8 @@ class ManagerTest extends TestCase {
         $this->assertSame("'2'", $args[2]['default']);
     }
 
-    public function testGetCall() {
+    public function testGetCall()
+    {
         $call = ManagerMock::getCall(
             '\Skeetr\Tests\Runtime\Example', 'natcasesort'
         );
@@ -102,46 +111,54 @@ class ManagerTest extends TestCase {
     }
 }
 
-class ManagerMock extends Manager {
-    static public $registered = array();
-    static public $loaded = false;
+class ManagerMock extends Manager
+{
+    public static $registered = array();
+    public static $loaded = false;
 
-    static public function register($class) {
+    public static function register($class)
+    {
         if ( self::registered($class) ) {
             throw new \InvalidArgumentException('Override already loaded');
         }
 
         static::$registered[$class] = 1;
+
         return;
     }
 
-    static public function readMethod($class, $method) {
+    public static function readMethod($class, $method)
+    {
         return parent::readMethod($class, $method);
     }
 
-    static public function getCall($class, $method) {
+    public static function getCall($class, $method)
+    {
         return parent::getCall($class, $method);
     }
 }
 
+class Example extends Override
+{
+    public static $test = 0;
 
-class Example extends Override {
-    static public $test = 0;
-
-    static public function reset() {
+    public static function reset()
+    {
         self::$test = 1;
     }
 
-    final static function natcasesort($mandatory, $optionalNull = null, $optionalString = '2') {
+    final public static function natcasesort($mandatory, $optionalNull = null, $optionalString = '2')
+    {
         return $mandatory;
     }
 }
 
+class ExampleEmpty extends Override
+{
+    public static $test = 0;
 
-class ExampleEmpty extends Override {
-    static public $test = 0;
-
-    static public function reset() {
+    public static function reset()
+    {
         self::$test = 1;
     }
 }

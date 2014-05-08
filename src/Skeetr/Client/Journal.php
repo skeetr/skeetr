@@ -2,7 +2,7 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -27,7 +27,7 @@ class Journal
     /**
      * Record a success event
      *
-     * @param integer $time mileseconds
+     * @param  integer $time mileseconds
      * @return integer Number of works succeed
      */
     public function addSuccess($time)
@@ -42,12 +42,13 @@ class Journal
     /**
      * Record a error event
      *
-     * @param string $error 
+     * @param  string  $error
      * @return integer Number of works errored
      */
     public function addError($msg)
     {
         $this->data['error'] = $msg;
+
         return ++$this->data['errors'];
     }
 
@@ -64,10 +65,10 @@ class Journal
     /**
      * Record a lost connection event
      *
-     * @param string $time number of mileseconds disconected
+     * @param  string  $time number of mileseconds disconected
      * @return integer Total time disconected from server
      */
-    public function addLostConnection($time) 
+    public function addLostConnection($time)
     {
         return $this->data['disconnected'] += $time;
     }
@@ -79,7 +80,7 @@ class Journal
      */
     public function addIdle()
     {
-        $time = microtime(true) - $this->idleSince; 
+        $time = microtime(true) - $this->idleSince;
         $this->idleSince = microtime(true);
 
         return $this->data['idle'] += $time;
@@ -91,8 +92,8 @@ class Journal
      * @return integer
      */
     public function getWorks()
-    { 
-        return $this->data['works']; 
+    {
+        return $this->data['works'];
     }
 
     /**
@@ -101,8 +102,8 @@ class Journal
      * @return float
      */
     public function getAvgTime()
-    { 
-        return $this->data['avg']; 
+    {
+        return $this->data['avg'];
     }
 
     /**
@@ -111,7 +112,7 @@ class Journal
      * @return integer
      */
     public function getErrors()
-    { 
+    {
         return $this->data['errors'];
     }
 
@@ -121,8 +122,8 @@ class Journal
      * @return integer
      */
     public function getLastError()
-    { 
-        return $this->data['error']; 
+    {
+        return $this->data['error'];
     }
 
    /**
@@ -131,7 +132,7 @@ class Journal
      * @return integer
      */
     public function getTimeouts()
-    { 
+    {
         return $this->data['timeouts'];
     }
 
@@ -151,7 +152,7 @@ class Journal
      * @return integer
      */
     public function getIdle()
-    { 
+    {
         return $this->data['idle'];
     }
 
@@ -161,7 +162,7 @@ class Journal
      * @return array
      */
     public function getData()
-    { 
+    {
         return $this->data;
     }
 

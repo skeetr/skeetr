@@ -2,13 +2,14 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Skeetr\Tests\Client\Handler;
+
 use Skeetr\Tests\TestCase;
 use Skeetr\Client\Handler\Error;
 
@@ -61,7 +62,7 @@ class ErrorTest extends TestCase
         $this->assertTrue($error->handle(E_USER_DEPRECATED, 'Foo', __FILE__, __LINE__, array()));
         $this->assertSame('warning', $this->logs[0]['level']);
     }
-    
+
     public function testHandle()
     {
         Error::setLogger($this->logger);
@@ -95,14 +96,14 @@ class ErrorTest extends TestCase
         $error->handleFatal();
         $this->assertCount(0, $this->logs);
     }
-    
+
     public function testHandleException()
     {
         Error::setLogger($this->logger);
         $error = new Error;
         $error->setLevel(E_ERROR);
         $error->handleException(new \Exception('Foo'));
-        
+
         $this->assertSame('error', $this->logs[0]['level']);
     }
 }

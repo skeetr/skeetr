@@ -2,15 +2,15 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Skeetr\Tests;
-use Skeetr\Client\Channels\RequestChannel;
 
+use Skeetr\Client\Channels\RequestChannel;
 use Skeetr\Mocks\Client;
 use Skeetr\Mocks\GearmanJob;
 use Skeetr\Mocks\Gearman\Worker;
@@ -22,9 +22,10 @@ class RequestChannelTest extends TestCase
         $client = new Client;
 
         $channel = new RequestChannel($client);
-        $channel->setCallback(function($request) { 
+        $channel->setCallback(function($request) {
             header('Foo: bar', true, 404);
-            return $request->getRequestUrl(); 
+
+            return $request->getRequestUrl();
         });
 
         $job = new GearmanJob;
@@ -43,11 +44,11 @@ class RequestChannelTest extends TestCase
     public function testProcessWrongCallback()
     {
         return;
-        
+
         $client = new Client;
 
         $channel = new RequestChannel($client);
-        $channel->setCallback(function($request) { 
+        $channel->setCallback(function($request) {
             throw new \Exception("Error Processing Request", 1);
         });
 
@@ -87,7 +88,7 @@ class RequestChannelTest extends TestCase
         $worker = new Worker;
         $channel->register($worker);
     }
-    
+
     /**
      * @expectedException InvalidArgumentException
      */
@@ -96,10 +97,10 @@ class RequestChannelTest extends TestCase
         $client = new Client;
 
         $channel = new RequestChannel($client);
-        $channel->setCallback(function($request) { 
-            return $request->getUrl(); 
+        $channel->setCallback(function($request) {
+            return $request->getUrl();
         });
-        
+
         $worker = new Worker;
         $channel->register($worker);
     }

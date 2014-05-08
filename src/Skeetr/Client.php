@@ -2,13 +2,14 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Skeetr;
+
 use Psr\Log\LoggerInterface;
 use Skeetr\Gearman\Worker;
 use Skeetr\Client\Journal;
@@ -16,7 +17,7 @@ use Skeetr\Client\Channel;
 use Skeetr\Client\Channels\ControlChannel;
 use Skeetr\Client\Channels\RequestChannel;
 use Skeetr\Runtime\Manager;
-    
+
 class Client
 {
     protected $memoryLimit = 67108864; //64mb
@@ -46,56 +47,60 @@ class Client
     /**
      * Sets the client id
      *
-     * @param string $id
-     * @return self The current Process instance
+     * @param  string $id
+     * @return self   The current Process instance
      */
     public function setId($id)
     {
         $this->id = $id;
+
         return $this;
     }
 
     /**
      * Sets the Gearman worker instance
      *
-     * @param Worker $worker
-     * @return self The current Process instance
+     * @param  Worker $worker
+     * @return self   The current Process instance
      */
     public function setWorker(Worker $worker)
     {
         $this->worker = $worker;
+
         return $this;
     }
 
     /**
      * Sets the journal instance
      *
-     * @param Journal $journal
-     * @return self The current Process instance
+     * @param  Journal $journal
+     * @return self    The current Process instance
      */
     public function setJournal(Journal $journal)
     {
         $this->journal = $journal;
+
         return $this;
     }
 
     /**
      * Sets the request channel name, where the request will be attended
      *
-     * @param string $channelName
-     * @return self The current Process instance
+     * @param  string $channelName
+     * @return self   The current Process instance
      */
     public function setChannelName($channelName)
     {
         $this->channelName = $channelName;
+
         return $this;
     }
 
     /**
      * Sets the callback, this callback generate the result of the request
      *
-     * @param string $channelName
-     * @return self The current Process instance
+     * @param  string $channelName
+     * @return self   The current Process instance
      */
     public function setCallback($callback)
     {
@@ -106,54 +111,59 @@ class Client
         }
 
         $this->callback = $callback;
+
         return $this;
     }
 
     /**
      * Sets the memory limit, when this limit is reached the loops ends
      *
-     * @param integer $bytes
-     * @return self The current Process instance
+     * @param  integer $bytes
+     * @return self    The current Process instance
      */
     public function setMemoryLimit($bytes)
     {
         $this->memoryLimit = $bytes;
+
         return $this;
     }
 
     /**
      * Sets the iterations limit, when this limit is reached the loops ends
      *
-     * @param integer $times
-     * @return self The current Process instance
+     * @param  integer $times
+     * @return self    The current Process instance
      */
     public function setInterationsLimit($times)
     {
         $this->interationsLimit = $times;
+
         return $this;
     }
 
     /**
      * Sets the number of seconds to wait when the client lost the connection with the server
      *
-     * @param integer $secs
-     * @return self The current Process instance
+     * @param  integer $secs
+     * @return self    The current Process instance
      */
     public function setSleepTimeOnError($secs)
     {
         $this->sleepTimeOnError = $secs;
+
         return $this;
     }
 
     /**
      * Sets the logger instance
      *
-     * @param LoggerInterface $logger
-     * @return self The current Process instance
+     * @param  LoggerInterface $logger
+     * @return self            The current Process instance
      */
     public function setLogger(LoggerInterface $logger = null)
     {
         $this->logger = $logger;
+
         return $this;
     }
 
@@ -163,7 +173,7 @@ class Client
      * @return string
      */
     public function getId()
-    { 
+    {
         return $this->id;
     }
 
@@ -174,7 +184,7 @@ class Client
      */
     public function getWorker()
     {
-        return $this->worker; 
+        return $this->worker;
     }
 
     /**
@@ -193,7 +203,7 @@ class Client
      * @return string
      */
     public function getChannelName()
-    { 
+    {
         return $this->channelName;
     }
 
@@ -203,7 +213,7 @@ class Client
      * @return callback
      */
     public function getCallback()
-    { 
+    {
         return $this->callback;
     }
 
@@ -213,8 +223,8 @@ class Client
      * @return integer
      */
     public function getMemoryLimit()
-    { 
-        return $this->memoryLimit; 
+    {
+        return $this->memoryLimit;
     }
 
     /**
@@ -223,7 +233,7 @@ class Client
      * @return integer
      */
     public function getInterationsLimit()
-    { 
+    {
         return $this->interationsLimit;
     }
 
@@ -270,8 +280,9 @@ class Client
         if ( !$this->loop ) return false;
 
         if ($message) $this->log('notice', sprintf('Loop stopped: %s', $message));
-        
+
         $this->loop = false;
+
         return true;
     }
 
@@ -279,21 +290,21 @@ class Client
      * Receives a notification from the channels and save it to the journal.
      *
      * @param integer $status Worker::STATUS_* conts
-     * @param mixed $value optional
+     * @param mixed   $value  optional
      */
     public function notify($status, $value = null)
     {
         switch ($status) {
-            case Worker::STATUS_SUCCESS: return $this->success((float)$value);
+            case Worker::STATUS_SUCCESS: return $this->success((float) $value);
             case Worker::STATUS_DISCONNECTED: return $this->disconnected();
             case Worker::STATUS_TIMEOUT: return $this->timeout();
             case Worker::STATUS_ERROR: return $this->error();
             case Worker::STATUS_IDLE: return $this->idle();
             default:
                 throw new \UnexpectedValueException(sprintf('Unexpected status: "%"', $status));
-        }      
+        }
     }
-        
+
     protected function loop()
     {
         $this->loop = true;
@@ -307,29 +318,29 @@ class Client
     }
 
     protected function error()
-    { 
+    {
         $msg = $this->worker->lastError();
         $this->log('notice', sprintf('Gearman error: "%s"', $msg));
 
-        $this->journal->addError($msg); 
+        $this->journal->addError($msg);
     }
 
     protected function timeout()
-    { 
+    {
         $this->log('notice', 'Timeout');
-        $this->journal->addTimeout(); 
-    } 
-    
+        $this->journal->addTimeout();
+    }
+
     protected function success($secs)
     {
         $this->log('notice', sprintf('Executed job in %f sec(s)', $secs));
-        $this->journal->addSuccess($secs); 
+        $this->journal->addSuccess($secs);
     }
 
     protected function idle()
     {
         $this->log('debug', 'Waiting for job...');
-        $this->journal->addIdle(); 
+        $this->journal->addIdle();
     }
 
     protected function disconnected()
@@ -337,7 +348,7 @@ class Client
         $this->log('notice', sprintf('Connection lost, waiting %s seconds ...', $this->sleepTimeOnError));
 
         $this->journal->addLostConnection($this->sleepTimeOnError);
-        sleep($this->sleepTimeOnError); 
+        sleep($this->sleepTimeOnError);
         $this->idle();
     }
 
@@ -356,9 +367,9 @@ class Client
 
     protected function checkStatus()
     {
-        if ( $this->memoryLimit ) {
+        if ($this->memoryLimit) {
             $memory = memory_get_usage(true);
-            if ( $memory >= $this->memoryLimit ) {
+            if ($memory >= $this->memoryLimit) {
                 return $this->shutdown(sprintf(
                     'Memory limit reached %d bytes (%d bytes limit)',
                     $memory, $this->memoryLimit
@@ -366,9 +377,9 @@ class Client
             }
         }
 
-        if ( $this->interationsLimit ) {
+        if ($this->interationsLimit) {
             $iterations = $this->journal->getWorks();
-            if ( $iterations >= $this->interationsLimit ) {
+            if ($iterations >= $this->interationsLimit) {
                 return $this->shutdown(sprintf(
                     'Iteration limit reached %d times (%d limit)',
                     $iterations, $this->interationsLimit

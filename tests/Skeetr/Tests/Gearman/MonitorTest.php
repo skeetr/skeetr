@@ -1,9 +1,11 @@
 <?php
 namespace Skeetr\Tests\Gearman;
+
 use Skeetr\Tests\TestCase;
 use Skeetr\Gearman\Monitor;
 
-class MonitorTest extends TestCase {
+class MonitorTest extends TestCase
+{
     public function testAddServerAndGetConnection()
     {
         $monitor = new Monitor();
@@ -15,10 +17,11 @@ class MonitorTest extends TestCase {
             'foo:1111'
         );
 
-        $this->assertSame($expect, $monitor->getServers());        
+        $this->assertSame($expect, $monitor->getServers());
     }
 
-    public function testSetTimeout() {
+    public function testSetTimeout()
+    {
         $monitor = new Monitor();
 
         $this->assertSame(10, $monitor->getTimeout());
@@ -27,7 +30,8 @@ class MonitorTest extends TestCase {
         $this->assertSame(1111, $monitor->getTimeout());
     }
 
-    public function testGetVersion() {
+    public function testGetVersion()
+    {
         $monitor = new MonitorMock();
         $monitor->addServer();
 
@@ -38,7 +42,8 @@ class MonitorTest extends TestCase {
         $this->assertSame($expect, $monitor->getVersion());
     }
 
-    public function testGetStatus() {
+    public function testGetStatus()
+    {
         $monitor = new MonitorMock();
         $monitor->addServer();
 
@@ -63,7 +68,8 @@ class MonitorTest extends TestCase {
         $this->assertSame(3, count($status['127.0.0.1:4730']));
     }
 
-    public function testGetWorkers() {
+    public function testGetWorkers()
+    {
         $monitor = new MonitorMock();
         $monitor->addServer();
 
@@ -90,22 +96,25 @@ class MonitorTest extends TestCase {
     /**
      * @expectedException RuntimeException
      */
-    public function testCheckForError() {
+    public function testCheckForError()
+    {
         $monitor = new MonitorMock();
         $monitor->addServer();
         $monitor->produceError();
-    } 
+    }
 }
 
-
-class MonitorMock extends Monitor {
-    protected function sendCommand($command, $multiline, $servers = null) {
+class MonitorMock extends Monitor
+{
+    protected function sendCommand($command, $multiline, $servers = null)
+    {
         return array(
             '127.0.0.1:4730' => TestCase::getResource('Gearman/' . ucfirst($command))
         );
     }
 
-    public function produceError() {
+    public function produceError()
+    {
         $this->checkForError(TestCase::getResource('Gearman/Error'));
     }
 }

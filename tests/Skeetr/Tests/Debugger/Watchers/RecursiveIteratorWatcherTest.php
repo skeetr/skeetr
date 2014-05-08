@@ -1,10 +1,13 @@
 <?php
 namespace Skeetr\Tests\Gearman;
+
 use Skeetr\Tests\TestCase;
 use Skeetr\Debugger\Watchers\RecursiveIteratorWatcher;
 
-class RecursiveIteratorWatcherTest extends TestCase {
-    public function testWatch() {
+class RecursiveIteratorWatcherTest extends TestCase
+{
+    public function testWatch()
+    {
         $watcher = new RecursiveIteratorWatcher();
         $watcher->addPattern(sys_get_temp_dir() . '/*.php');
 

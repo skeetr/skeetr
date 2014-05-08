@@ -2,7 +2,7 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -10,12 +10,14 @@
 
 namespace Skeetr\Runtime;
 
-class Manager {
-    static private $loaded = false;
-    static private $registered = array();
-    static private $functions = array();
+class Manager
+{
+    private static $loaded = false;
+    private static $registered = array();
+    private static $functions = array();
 
-    static public function auto($pattern = null) {
+    public static function auto($pattern = null)
+    {
         if ( static::$loaded ) return true;
 
         if ( !$pattern ) $pattern = __DIR__ . '/Overrides/*.php';
@@ -32,7 +34,8 @@ class Manager {
         static::$loaded = true;
     }
 
-    static public function register($class) {
+    public static function register($class)
+    {
         if ( static::registered($class) ) {
             throw new \InvalidArgumentException('Override already loaded');
         }
@@ -45,7 +48,7 @@ class Manager {
         }
 
         $functions = array();
-        foreach( $reflection->getMethods(\ReflectionMethod::IS_FINAL) as $method) {
+        foreach ( $reflection->getMethods(\ReflectionMethod::IS_FINAL) as $method) {
             $function = $method->getName();
             if ( !function_exists($function) ) continue;
 
@@ -54,7 +57,7 @@ class Manager {
 
             $functions[$function] = 1;
         }
-        
+
         if ( count($functions) == 0 ) {
             throw new \InvalidArgumentException(sprintf(
                 'The class "%s" not contains any override function',
@@ -68,42 +71,48 @@ class Manager {
         static::$registered[$class] = 1;
     }
 
-    static public function overridden($function) {
+    public static function overridden($function)
+    {
          if ( isset(static::$functions[$function]) ) return true;
-        return false;       
+        return false;
     }
 
-    static public function registered($class) {
+    public static function registered($class)
+    {
         if ( isset(static::$registered[$class]) ) return true;
         return false;
     }
 
-    static public function loaded() {
+    public static function loaded()
+    {
         return static::$loaded;
-    }    
+    }
 
-    static public function reset($class = null) {
+    public static function reset($class = null)
+    {
         if ( !static::$loaded ) return false;
-
 
         if ( $class && isset(static::$registered[$class]) ) return $class::reset();
         else if ( $class ) return false;
 
         foreach(static::$registered as $class => $registered) $class::reset();
+
         return true;
     }
 
-    static public function values($class = null) {
+    public static function values($class = null)
+    {
         if ( !static::$loaded ) return false;
 
         if ( $class && isset(static::$registered[$class]) ) {
             $tmp = explode('\\', $class);
             $key = strtolower(end($tmp));
+
             return array($key => $class::values());
-        } else if ( $class ) return false;
+        } elseif ( $class ) return false;
 
         $values = array();
-        foreach(static::$registered as $class => $registered) {
+        foreach (static::$registered as $class => $registered) {
             $tmp = explode('\\', $class);
             $key = strtolower(end($tmp));
             $values[$key] = $class::values();
@@ -112,11 +121,12 @@ class Manager {
         return $values;
     }
 
-    static protected function getCall($class, $method) {
+    protected static function getCall($class, $method)
+    {
         $call = array();
         $args = array();
 
-        foreach(static::readMethod($class, $method) as $arg) {
+        foreach (static::readMethod($class, $method) as $arg) {
             $call[] = sprintf('$%s', $arg['name']);
             if ( !isset($arg['default']) ) $args[] = sprintf('$%s', $arg['name']);
             else $args[] = sprintf('$%s = %s', $arg['name'], $arg['default']);
@@ -129,12 +139,13 @@ class Manager {
         );
     }
 
-    static protected function readMethod($class, $method) {
+    protected static function readMethod($class, $method)
+    {
         $reflection = new \ReflectionClass($class);
         $method = $reflection->getMethod($method);
 
         $args = array();
-        foreach( $method->getParameters() as $param ) {
+        foreach ( $method->getParameters() as $param ) {
             $arg = array();
             $arg['name'] = $param->getName();
             if ( $param->isOptional() ) {

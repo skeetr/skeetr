@@ -2,7 +2,7 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -39,7 +39,7 @@ class ResponseTest extends TestCase
         $response->setHeaders($headers);
 
         $this->assertSame($headers, $response->getHeaders());
-    } 
+    }
 
     public function testAddHeaders()
     {
@@ -52,7 +52,7 @@ class ResponseTest extends TestCase
         $response->addHeaders($headers);
 
         $this->assertSame($headers, $response->getHeaders());
-    } 
+    }
 
     public function testAddHeadersAppend()
     {
@@ -71,8 +71,7 @@ class ResponseTest extends TestCase
         );
 
         $this->assertSame($expected, $response->getHeaders());
-    } 
-
+    }
 
     public function testAddHeader()
     {
@@ -93,7 +92,8 @@ class ResponseTest extends TestCase
         $this->assertSame($expected, $response->getHeaders());
     }
 
-    public function testAddHeaderAppend() {
+    public function testAddHeaderAppend()
+    {
         $headers = array(
             'Foo' => 'bar',
             'Baz' => 'qux'
@@ -109,7 +109,7 @@ class ResponseTest extends TestCase
         );
 
         $this->assertSame($expected, $response->getHeaders());
-    } 
+    }
 
     public function testSetResponseCodeAndGetResponseCode()
     {
@@ -149,7 +149,8 @@ class ResponseTest extends TestCase
         $this->assertSame($server, $response->getServer());
     }
 
-    public function testSetCookieAndGetCookies() {
+    public function testSetCookieAndGetCookies()
+    {
         $time = time() + 10;
         $response = new Response();
         $response->setCookie('foo', 'bar', $time, '/', null, false, true);
@@ -208,10 +209,10 @@ class ResponseTest extends TestCase
         $array = json_decode($message, true);
 
         $this->assertSame(200, $array['responseCode']);
-        $this->assertSame((string)$body, $array['body']);
+        $this->assertSame((string) $body, $array['body']);
         $this->assertSame('Skeetr 0.0.1', $array['headers']['Server']);
         $this->assertSame('text/html', $array['headers']['Content-Type']);
-        $this->assertSame((string)strlen($body), $array['headers']['Content-Length']);
+        $this->assertSame((string) strlen($body), $array['headers']['Content-Length']);
     }
 
     public function testToArrayWithoutDefaults()
@@ -225,9 +226,9 @@ class ResponseTest extends TestCase
         $array = $response->toArray(false);
 
         $this->assertSame(0, $array['responseCode']);
-        $this->assertSame((string)$body, $array['body']);
+        $this->assertSame((string) $body, $array['body']);
         $this->assertFalse(isset($array['headers']['Server']));
         $this->assertFalse(isset($array['headers']['Content-Type']));
-        $this->assertSame((string)strlen($body), $array['headers']['Content-Length']);
+        $this->assertSame((string) strlen($body), $array['headers']['Content-Length']);
     }
 }

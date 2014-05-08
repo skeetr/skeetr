@@ -2,7 +2,7 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,7 +12,6 @@ namespace Skeetr\Client\HTTP;
 
 use http\Message;
 use http\Cookie;
-
 use UnexpectedValueException;
 
 class Request extends Message
@@ -27,7 +26,8 @@ class Request extends Message
     private $remote = array();
     private $cookies = array();
 
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $this->setType(Message::TYPE_REQUEST);
     }
@@ -36,7 +36,7 @@ class Request extends Message
      * Configure the request based on a JSON, usually received on the workload
      * from a GearmanJob from the nginx.
      *
-     * @param string $json
+     * @param  string  $json
      * @return boolean
      */
     public static function fromJSON($json)
@@ -50,7 +50,7 @@ class Request extends Message
         }
 
         $request->setTimestamp(microtime(true));
-        
+
         if ( isset($data['url']) ) $request->setRequestUrl($data['url']);
         if ( isset($data['method']) ) $request->setRequestMethod($data['method']);
 
@@ -79,7 +79,7 @@ class Request extends Message
             $request->setRemoteInfo($data['remote']);
         }
 
-        return $request; 
+        return $request;
     }
 
     /**
@@ -90,7 +90,7 @@ class Request extends Message
     public function setTimestamp($timestamp)
     {
         $this->timestamp = $timestamp;
-        $this->setServerGlobal('REQUEST_TIME', (int)$timestamp);
+        $this->setServerGlobal('REQUEST_TIME', (int) $timestamp);
         $this->setServerGlobal('REQUEST_TIME_FLOAT', $timestamp);
     }
 
@@ -102,8 +102,8 @@ class Request extends Message
     public function setRemoteInfo($info)
     {
         $this->remote = $info;
-        $this->setServerGlobal('REMOTE_ADDR', (string)$info['addr']);
-        $this->setServerGlobal('REMOTE_PORT', (string)$info['port']);
+        $this->setServerGlobal('REMOTE_ADDR', (string) $info['addr']);
+        $this->setServerGlobal('REMOTE_PORT', (string) $info['port']);
     }
 
     /**
@@ -115,14 +115,14 @@ class Request extends Message
     {
         $this->server = $info;
 
-        if ( isset($info['name']) && $info['name'] ) $name = (string)$info['name'];
-        else $name = (string)$this->getHeader('Host');
+        if ( isset($info['name']) && $info['name'] ) $name = (string) $info['name'];
+        else $name = (string) $this->getHeader('Host');
 
         $this->setServerGlobal('SERVER_NAME', $name);
-        
-        $this->setServerGlobal('SERVER_ADDR', (string)$info['addr']);
-        $this->setServerGlobal('SERVER_PORT', (string)$info['port']);
-        $this->setServerGlobal('SERVER_PROTOCOL', (string)$info['proto']);
+
+        $this->setServerGlobal('SERVER_ADDR', (string) $info['addr']);
+        $this->setServerGlobal('SERVER_PORT', (string) $info['port']);
+        $this->setServerGlobal('SERVER_PROTOCOL', (string) $info['proto']);
 
         //TODO: Version Server
         $this->setServerGlobal('SERVER_SOFTWARE', 'Skeetr/0.0.1');
@@ -137,15 +137,15 @@ class Request extends Message
     {
         parent::addHeaders($headers);
 
-        $this->setServerGlobal('HTTP_HOST', (string)$this->getHeader('Host'));
-        $this->setServerGlobal('HTTP_ACCEPT', (string)$this->getHeader('Accept'));
-        $this->setServerGlobal('HTTP_CONNECTION', (string)$this->getHeader('Connection')); 
-        $this->setServerGlobal('HTTP_USER_AGENT', (string)$this->getHeader('User-Agent')); 
-        $this->setServerGlobal('HTTP_ACCEPT_ENCODING', (string)$this->getHeader('Accept-Encoding')); 
-        $this->setServerGlobal('HTTP_ACCEPT_LANGUAGE', (string)$this->getHeader('Accept-Language')); 
-        $this->setServerGlobal('HTTP_ACCEPT_CHARSET', (string)$this->getHeader('Accept-Charset')); 
-        $this->setServerGlobal('HTTP_CACHE_CONTROL', (string)$this->getHeader('Cache-Control')); 
-        $this->setServerGlobal('HTTP_COOKIE', (string)$this->getHeader('Cookie')); 
+        $this->setServerGlobal('HTTP_HOST', (string) $this->getHeader('Host'));
+        $this->setServerGlobal('HTTP_ACCEPT', (string) $this->getHeader('Accept'));
+        $this->setServerGlobal('HTTP_CONNECTION', (string) $this->getHeader('Connection'));
+        $this->setServerGlobal('HTTP_USER_AGENT', (string) $this->getHeader('User-Agent'));
+        $this->setServerGlobal('HTTP_ACCEPT_ENCODING', (string) $this->getHeader('Accept-Encoding'));
+        $this->setServerGlobal('HTTP_ACCEPT_LANGUAGE', (string) $this->getHeader('Accept-Language'));
+        $this->setServerGlobal('HTTP_ACCEPT_CHARSET', (string) $this->getHeader('Accept-Charset'));
+        $this->setServerGlobal('HTTP_CACHE_CONTROL', (string) $this->getHeader('Cache-Control'));
+        $this->setServerGlobal('HTTP_COOKIE', (string) $this->getHeader('Cookie'));
     }
 
     /**
@@ -162,7 +162,7 @@ class Request extends Message
     /**
      * Sets URL
      *
-     * @param string $url 
+     * @param string $url
      */
     public function setRequestUrl($url)
     {
@@ -173,7 +173,7 @@ class Request extends Message
     /**
      * Sets POST fields
      *
-     * @param array $fields 
+     * @param array $fields
      */
     public function setPostFields(array $fields)
     {
@@ -190,17 +190,18 @@ class Request extends Message
     /**
      * Sets POST files
      *
-     * @param array $fields 
+     * @param array $fields
      */
-    public function setPostFiles() { 
+    public function setPostFiles()
+    {
         $_FILES = array();
-        throw new \Exception('Not implemented'); 
+        throw new \Exception('Not implemented');
     }
 
     /**
      * Sets GET fields
      *
-     * @param array $fields 
+     * @param array $fields
      */
     public function setQueryFields(array $fields)
     {
@@ -215,7 +216,7 @@ class Request extends Message
     /**
      * Sets cookies
      *
-     * @param array $cookies 
+     * @param array $cookies
      */
     public function setCookies(Cookie $cookies)
     {
@@ -227,93 +228,92 @@ class Request extends Message
     /**
      * Get timestamp of the request
      *
-     * @return float 
+     * @return float
      */
     public function getTimestamp()
-    { 
+    {
         return $this->timestamp;
     }
 
     /**
      * Get remote user info
      *
-     * @return array 
+     * @return array
      */
     public function getRemoteInfo()
-    { 
+    {
         return $this->remote;
     }
 
     /**
      * Get server info
      *
-     * @return array 
+     * @return array
      */
     public function getServerInfo()
     {
         return $this->server;
     }
 
-
     /**
      * Get headers
      *
-     * @return array 
+     * @return array
      */
     public function getHeaders()
-    { 
-        return parent::getHeaders(); 
+    {
+        return parent::getHeaders();
     }
 
     /**
      * Get a header by name
      *
-     * @param string $header
-     * @return string  
+     * @param  string $header
+     * @return string
      */
     public function getHeader($header, $into_class = null)
-    { 
+    {
         return parent::getHeader($header);
     }
 
     /**
      * Get method
      *
-     * @return string 
+     * @return string
      */
     public function getRequestMethod()
     {
-        return parent::getRequestMethod(); 
+        return parent::getRequestMethod();
     }
 
     /**
      * Get URL
      *
-     * @return string 
+     * @return string
      */
     public function getRequestUrl()
     {
-        return parent::getRequestUrl(); 
+        return parent::getRequestUrl();
     }
 
     /**
      * Get POST fields
      *
-     * @return array 
+     * @return array
      */
     public function getPostFields()
-    { 
-        return $this->post; 
+    {
+        return $this->post;
     }
 
     /**
      * Get GET fields
      *
-     * @return array 
+     * @return array
      */
     public function getQueryFields()
-    { 
-        return $this->get; 
+    {
+        return $this->get;
     }
 
     /**
@@ -329,17 +329,17 @@ class Request extends Message
     /**
      * Get POST files
      *
-     * @return array 
+     * @return array
      */
     public function getPostFiles()
-    { 
+    {
         throw new \Exception('Not implemented');
     }
 
     /**
      * Get cookies
      *
-     * @return array 
+     * @return array
      */
     public function getCookies()
     {
@@ -359,25 +359,25 @@ class Request extends Message
     public function toArray()
     {
         return array(
-            'url' => $this->getRequestUrl(),  
+            'url' => $this->getRequestUrl(),
             'method' => $this->getRequestMethod(),
             'headers' => $this->getHeaders(),
             'post' => $this->getPostFields(),
             'get' => $this->getQueryFields(),
             'server' => $this->getServerInfo(),
             'remote' => $this->getRemoteInfo()
-        ); 
+        );
     }
 
     /**
      * Returns a string with the values of this Request
      *
-     * @param boolean $default if TRUE setDefaults() is called
+     * @param  boolean $default if TRUE setDefaults() is called
      * @return string
      */
     public function toString($deprecated = false)
     {
-        return (string)$this;
+        return (string) $this;
     }
 
     /**

@@ -1,14 +1,16 @@
 <?php
 namespace Skeetr\Tests;
+
 use Skeetr\Runtime\Manager;
 
-class TestCase extends \PHPUnit_Framework_TestCase {   
-    public function setUp() 
+class TestCase extends \PHPUnit_Framework_TestCase
+{
+    public function setUp()
     {
         Manager::reset();
 
         $this->logs = array();
- 
+
         $this->logger = $this->getMock(
             'Psr\Log\AbstractLogger', array('log'), array(), '', false
         );
@@ -28,7 +30,7 @@ class TestCase extends \PHPUnit_Framework_TestCase {
         );
     }
 
-    public static function getResource($path) 
+    public static function getResource($path)
     {
         return file_get_contents(__DIR__ . '/../../Resources/' . $path);
     }

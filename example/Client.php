@@ -15,7 +15,6 @@ foreach ($status as $host => $functions) {
     }
 }
 
-
 # Crea el cliente gearman
 $gmc= new GearmanClient();
 # Añade el servidor de trabajos por defecto
@@ -29,8 +28,7 @@ foreach ($control as $function) {
 }
 # Añade tareas, una de ellas de baja prioridad
 
-if (! $gmc->runTasks())
-{   
+if (! $gmc->runTasks()) {
     echo "ERROR " . $gmc->error() . "\n";
     exit;
 }

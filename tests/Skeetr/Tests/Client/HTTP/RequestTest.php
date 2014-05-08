@@ -2,7 +2,7 @@
 /*
  * This file is part of the Skeetr package.
  *
- * (c) Máximo Cuadros <maximo@yunait.com>
+ * (c) Máximo Cuadros <mcuadros@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -19,6 +19,7 @@ class RequestTest extends TestCase
     public function getRequest($method)
     {
         $json = file_get_contents(__DIR__ . '/../../../../Resources/Request/' . $method);
+
         return Request::fromJSON($json);
     }
 
@@ -33,7 +34,7 @@ class RequestTest extends TestCase
     public function testGetTimestamp()
     {
         $r = $this->getRequest('GET');
-        $this->assertSame((int)microtime(true), (int)$r->getTimestamp());
+        $this->assertSame((int) microtime(true), (int) $r->getTimestamp());
     }
 
     public function testGetServerInfo()
@@ -162,7 +163,6 @@ class RequestTest extends TestCase
 
         $this->assertTrue((bool) $request->getHeader('Host'));
         $this->assertTrue((bool) $request->getHeader('Cookie'));
-
 
         $this->assertCount(12, $request->getHeaders());
 

@@ -1,10 +1,12 @@
 <?php
 namespace Skeetr\Tests;
-use Skeetr\Client;
+
 use Skeetr\Gearman\Worker;
 
-class WorkerTest extends TestCase {
-    public function createWorker() {
+class WorkerTest extends TestCase
+{
+    public function createWorker()
+    {
         $this->mock = $this->getMock('GearmanWorker');
         $this->mock->expects($this->any())
              ->method('addFunction')
@@ -16,7 +18,8 @@ class WorkerTest extends TestCase {
         return $worker;
     }
 
-    public function testAddServer() {
+    public function testAddServer()
+    {
         $worker = $this->createWorker();
         $worker->addServer();
         $worker->addServer('192.168.0.1', 1111);
@@ -35,7 +38,8 @@ class WorkerTest extends TestCase {
         $this->assertTrue($worker->addFunction('test', function() {}, $worker, 3));
     }
 
-    public function testGetLastError() {
+    public function testGetLastError()
+    {
         $worker = $this->createWorker();
 
         $this->mock->expects($this->any())
@@ -45,7 +49,8 @@ class WorkerTest extends TestCase {
         $this->assertSame('foo', $worker->getLastError());
     }
 
-    public function testEvaluateIdle() {
+    public function testEvaluateIdle()
+    {
         $worker = $this->createWorker();
         $this->mock->expects($this->any())
             ->method('returnCode')
@@ -54,8 +59,8 @@ class WorkerTest extends TestCase {
         $this->assertSame(Worker::STATUS_IDLE, $worker->work());
     }
 
-
-    public function testEvaluateError() {
+    public function testEvaluateError()
+    {
         $worker = $this->createWorker();
         $this->mock->expects($this->any())
             ->method('returnCode')
@@ -64,8 +69,8 @@ class WorkerTest extends TestCase {
         $this->assertSame(Worker::STATUS_ERROR, $worker->work());
     }
 
-
-    public function testEvaluateDisconnect() {
+    public function testEvaluateDisconnect()
+    {
         $worker = $this->createWorker();
         $this->mock->expects($this->any())
             ->method('returnCode')
@@ -77,7 +82,8 @@ class WorkerTest extends TestCase {
         $this->assertSame(Worker::STATUS_DISCONNECTED, $worker->work());
     }
 
-    public function testEvaluateDisconnectIdle() {
+    public function testEvaluateDisconnectIdle()
+    {
         $worker = $this->createWorker();
         $this->mock->expects($this->any())
             ->method('returnCode')
@@ -89,7 +95,8 @@ class WorkerTest extends TestCase {
         $this->assertSame(Worker::STATUS_IDLE, $worker->work());
     }
 
-    public function testEvaluateTimeout() {
+    public function testEvaluateTimeout()
+    {
         $worker = $this->createWorker();
         $this->mock->expects($this->any())
             ->method('returnCode')
@@ -99,9 +106,10 @@ class WorkerTest extends TestCase {
     }
 }
 
-class WorkerMock extends Worker {
-    public function setWorker($worker) {
+class WorkerMock extends Worker
+{
+    public function setWorker($worker)
+    {
         $this->instance = $worker;
     }
 }
-
