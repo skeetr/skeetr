@@ -32,7 +32,10 @@ class Socket
     private function throwExceptionIfPathExists()
     {
         if (file_exists($this->path)) {
-            throw new RuntimeException('Temporary socket already exists.');
+            throw new RuntimeException(sprintf(
+                'Temporary socket (%s) already exists.',
+                $this->path
+            ));
         }
     }
 

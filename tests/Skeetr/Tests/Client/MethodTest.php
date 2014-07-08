@@ -46,8 +46,3 @@ class MethodTest extends TestCase
         $this->assertTrue($channel->register($worker));
     }
 }
-
-class MethodMock extends Method
-{
-    public function process(\GearmanJob $job) {}
-}

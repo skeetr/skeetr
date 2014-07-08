@@ -27,8 +27,9 @@ class Request
     public static function fromJSON($json)
     {
         $request = new static();
+        print_r($json);
         $data = json_decode($json, true);
-
+print_r($data);
         if (!$data) {
             throw new UnexpectedValueException(sprintf(
                 'Unexpected message, invalid JSON from nginx: "%s"', $json
