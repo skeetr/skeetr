@@ -19,16 +19,19 @@ class RequestTest extends TestCase
     public function getRequest($method)
     {
         $json = file_get_contents(__DIR__ . '/../../../../Resources/Request/' . $method);
+        $data = json_decode($json, true);
 
-        return Request::fromJSON($json);
+        $params = end($data['params']);
+
+        return Request::fromArray($params);
     }
 
     /**
      * @expectedException UnexpectedValueException
      */
-    public function testFromJSONInvalid()
+    public function testFromArrayInvalid()
     {
-        Request::fromJSON('noJSON');
+        Request::fromArray([]);
     }
 
     public function testGetTimestamp()
@@ -70,15 +73,13 @@ class RequestTest extends TestCase
     {
         $this->assertTrue(is_array($this->getRequest('GET')->getHeaders()));
 
-        $this->assertSame('foo.bar.com', $_SERVER['HTTP_HOST']);
-        $this->assertSame('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', $_SERVER['HTTP_ACCEPT']);
+        $this->assertSame('localhost:1234', $_SERVER['HTTP_HOST']);
+        $this->assertSame('*/*', $_SERVER['HTTP_ACCEPT']);
         $this->assertSame('keep-alive', $_SERVER['HTTP_CONNECTION']);
-        $this->assertSame('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.160 Safari/537.22', $_SERVER['HTTP_USER_AGENT']);
+        $this->assertSame('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36', $_SERVER['HTTP_USER_AGENT']);
         $this->assertSame('gzip,deflate,sdch', $_SERVER['HTTP_ACCEPT_ENCODING']);
-        $this->assertSame('en-US,en;q=0.8', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
-        $this->assertSame('ISO-8859-1,utf-8;q=0.7,*;q=0.3', $_SERVER['HTTP_ACCEPT_CHARSET']);
-        $this->assertSame('max-age=0', $_SERVER['HTTP_CACHE_CONTROL']);
-        $this->assertSame('ppkcookie2=another test', $_SERVER['HTTP_COOKIE']);
+        $this->assertSame('en-US,en;q=0.8,de;q=0.6,es;q=0.4', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
+        $this->assertSame('__utma=62420665.1497995081.1405013807.1405013807.1405098118.2; __utmc=62420665; __utmz=62420665.1405098118.2.2.utmcsr=golanggo.com|utmccn=(referral)|utmcmd=referral|utmcct=/post/91465473544/visualising-the-go-garbage-collector', $_SERVER['HTTP_COOKIE']);
     }
 
     public function testGetMethod()
@@ -91,15 +92,15 @@ class RequestTest extends TestCase
 
     public function testGetURL()
     {
-        $this->assertSame('/filename.html', $this->getRequest('GET')->getRequestUrl());
-        $this->assertSame('/filename.html', $_SERVER['REQUEST_URI']);
+        $this->assertSame('/foo?foo=bar', $this->getRequest('GET')->getRequestUrl());
+        $this->assertSame('/foo?foo=bar', $_SERVER['REQUEST_URI']);
     }
 
     public function testGetPostFields()
     {
         $expected = array(
             'foo' => 'bar',
-            'baz' => 'qux'
+            'qux' => 'baz'
         );
 
         $this->assertSame($expected, $this->getRequest('POST')->getPostFields());
@@ -125,8 +126,7 @@ class RequestTest extends TestCase
     public function testGetQueryFields()
     {
         $expected = array(
-            'foo' => 'bar',
-            'baz' => 'qux'
+            'foo' => 'bar'
         );
 
         $this->assertSame($expected, $this->getRequest('GET')->getQueryFields());
@@ -135,7 +135,7 @@ class RequestTest extends TestCase
 
     public function testGetHeader()
     {
-        $this->assertSame('keep-alive', $this->getRequest('GET')->getHeader('Connection'));
+        $this->assertSame(['keep-alive'], $this->getRequest('GET')->getHeader('Connection'));
     }
 
     public function testGetCookies()
@@ -149,7 +149,7 @@ class RequestTest extends TestCase
     public function testGetQueryData()
     {
         $qs = $this->getRequest('GET')->getQueryData();
-        $this->assertSame('foo=bar&baz=qux', $qs);
+        $this->assertSame('foo=bar', $qs);
     }
 
     public function testToString()
@@ -158,15 +158,15 @@ class RequestTest extends TestCase
 
         $message = new Message($request->toString());
 
-        $this->assertSame('/post', $request->getRequestUrl());
+        $this->assertSame('/foo?foo=bar', $request->getRequestUrl());
         $this->assertSame('POST', $request->getRequestMethod());
 
         $this->assertTrue((bool) $request->getHeader('Host'));
         $this->assertTrue((bool) $request->getHeader('Cookie'));
 
-        $this->assertCount(12, $request->getHeaders());
+        $this->assertCount(10, $request->getHeaders());
 
-        $this->assertSame("foo=bar&baz=qux", $message->getBody()->toString());
+      //  $this->assertSame("foo=bar&baz=qux", $message->getBody()->toString());
     }
 
     public function testToJSON()
@@ -175,8 +175,10 @@ class RequestTest extends TestCase
 
         $message = $request->toJSON();
         $array = json_decode($message, true);
+        print_r($array);
+        var_dump((string) $message);
 
-        $this->assertSame('/filename.html', $array['url']);
+        $this->assertSame('/foo?foo=bar', $array['url']);
         $this->assertSame('GET', $array['method']);
 
         $this->assertTrue(isset($array['headers']['Host']));
@@ -184,10 +186,8 @@ class RequestTest extends TestCase
         $this->assertTrue(isset($array['server']));
         $this->assertTrue(isset($array['remote']));
 
-        $this->assertCount(9, $array['headers']);
-
+        $this->assertCount(7, $array['headers']);
         $this->assertSame('bar', $array['get']['foo']);
-        $this->assertSame('qux', $array['get']['baz']);
     }
 
     public function testToArray()
@@ -196,17 +196,17 @@ class RequestTest extends TestCase
 
         $array = $request->toArray(false);
 
-        $this->assertSame('/filename.html', $array['url']);
+        $this->assertSame('/foo?foo=bar', $array['url']);
         $this->assertSame('GET', $array['method']);
+
 
         $this->assertTrue(isset($array['headers']['Host']));
         $this->assertTrue(isset($array['headers']['Cookie']));
         $this->assertTrue(isset($array['server']));
         $this->assertTrue(isset($array['remote']));
 
-        $this->assertCount(9, $array['headers']);
+        $this->assertCount(7, $array['headers']);
 
         $this->assertSame('bar', $array['get']['foo']);
-        $this->assertSame('qux', $array['get']['baz']);
     }
 }

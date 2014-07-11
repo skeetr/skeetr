@@ -16,6 +16,7 @@ use UnexpectedValueException;
 
 class Request extends Message
 {
+    private $rpcMethod;
     private $timestamp;
     private $url;
     private $method;
@@ -39,36 +40,48 @@ class Request extends Message
      * @param  string  $json
      * @return boolean
      */
-    public static function fromJSON($json)
+    public static function fromArray(Array $data)
     {
         $request = new static();
 
-        if ( !$data = json_decode($json, true) ) {
-            throw new UnexpectedValueException(sprintf(
-                'Unexpected message, invalid JSON from nginx: "%s"', $json
-            ));
+        if (!isset($data['body']) || !isset($data['request'])) {
+            throw new UnexpectedValueException(
+                'Unexpected data, invalid data'
+            );
         }
+
+        $body = $data['body'];
+        $params = $data['request'];
 
         $request->setTimestamp(microtime(true));
 
-        if ( isset($data['url']) ) $request->setRequestUrl($data['url']);
-        if ( isset($data['method']) ) $request->setRequestMethod($data['method']);
+        if (isset($params['RequestURI'])) {
+            $request->setRequestUrl($params['RequestURI']);
+        }
 
-        if ( isset($data['headers']) && is_array($data['headers']) ) {
-            $request->setHeaders($data['headers']);
+        if (isset($params['Method'])) {
+            $request->setRequestMethod($params['Method']);
+        }
+
+        if (isset($params['Header']) && is_array($params['Header'])) {
+            $headers = $params['Header'];
+
+            if (isset($params['Host'])) {
+                $headers['Host'] = [$params['Host']];
+            }
+
+            $request->setHeaders($headers);
 
             //Malformed cookies will return a fatal error
-            if ( $cookies = new Cookie($request->getHeader('Cookie')) ) {
+            $cookies = $cookies = new Cookie($request->getHeader('Cookie'));
+            if ($cookies) {
                 $request->setCookies($cookies);
             }
         }
 
-        if ( isset($data['post']) && is_array($data['post']) ) {
-            $request->setPostFields($data['post']);
-        }
-
-        if ( isset($data['get']) && is_array($data['get']) ) {
-            $request->setQueryFields($data['get']);
+        if (isset($params['URL']['RawQuery'])) {
+            parse_str($params['URL']['RawQuery'], $queryFields);
+            $request->setQueryFields($queryFields);
         }
 
         if ( isset($data['server']) && is_array($data['server']) ) {
@@ -77,6 +90,11 @@ class Request extends Message
 
         if ( isset($data['remote']) && is_array($data['remote']) ) {
             $request->setRemoteInfo($data['remote']);
+        }
+
+        if (strlen($body)) {
+            parse_str($body, $postFields);
+            $request->setPostFields($postFields);
         }
 
         return $request;
@@ -137,15 +155,15 @@ class Request extends Message
     {
         parent::addHeaders($headers);
 
-        $this->setServerGlobal('HTTP_HOST', (string) $this->getHeader('Host'));
-        $this->setServerGlobal('HTTP_ACCEPT', (string) $this->getHeader('Accept'));
-        $this->setServerGlobal('HTTP_CONNECTION', (string) $this->getHeader('Connection'));
-        $this->setServerGlobal('HTTP_USER_AGENT', (string) $this->getHeader('User-Agent'));
-        $this->setServerGlobal('HTTP_ACCEPT_ENCODING', (string) $this->getHeader('Accept-Encoding'));
-        $this->setServerGlobal('HTTP_ACCEPT_LANGUAGE', (string) $this->getHeader('Accept-Language'));
-        $this->setServerGlobal('HTTP_ACCEPT_CHARSET', (string) $this->getHeader('Accept-Charset'));
-        $this->setServerGlobal('HTTP_CACHE_CONTROL', (string) $this->getHeader('Cache-Control'));
-        $this->setServerGlobal('HTTP_COOKIE', (string) $this->getHeader('Cookie'));
+        $this->setServerGlobal('HTTP_HOST', (string) $this->getHeader('Host')[0]);
+        $this->setServerGlobal('HTTP_ACCEPT', (string) $this->getHeader('Accept')[0]);
+        $this->setServerGlobal('HTTP_CONNECTION', (string) $this->getHeader('Connection')[0]);
+        $this->setServerGlobal('HTTP_USER_AGENT', (string) $this->getHeader('User-Agent')[0]);
+        $this->setServerGlobal('HTTP_ACCEPT_ENCODING', (string) $this->getHeader('Accept-Encoding')[0]);
+        $this->setServerGlobal('HTTP_ACCEPT_LANGUAGE', (string) $this->getHeader('Accept-Language')[0]);
+        $this->setServerGlobal('HTTP_ACCEPT_CHARSET', (string) $this->getHeader('Accept-Charset')[0]);
+        $this->setServerGlobal('HTTP_CACHE_CONTROL', (string) $this->getHeader('Cache-Control')[0]);
+        $this->setServerGlobal('HTTP_COOKIE', (string) $this->getHeader('Cookie')[0]);
     }
 
     /**
@@ -273,7 +291,13 @@ class Request extends Message
      */
     public function getHeader($header, $into_class = null)
     {
-        return parent::getHeader($header);
+        $header = parent::getHeader($header);
+
+        if (!is_array($header)) {
+            return [$header];
+        }
+
+        return $header;
     }
 
     /**
