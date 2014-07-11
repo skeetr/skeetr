@@ -45,15 +45,16 @@ class RequestTest extends TestCase
         $r = $this->getRequest('GET');
 
         $expected = array(
-            'addr' => '46.105.116.221', 'proto' => 'HTTP/1.1',
-            'name' => '', 'port' => '80'
+            'host' => 'localhost',
+            'port' => 1234,
+            'proto' => 'HTTP/1.1'
         );
 
         $this->assertSame($expected, $r->getServerInfo());
-        $this->assertSame('46.105.116.221', $_SERVER['SERVER_ADDR']);
-        $this->assertSame('80', $_SERVER['SERVER_PORT']);
-        $this->assertSame('foo.bar.com', $_SERVER['SERVER_NAME']);
-        $this->assertSame('Skeetr/0.0.1', $_SERVER['SERVER_SOFTWARE']);
+        $this->assertSame('localhost', $_SERVER['SERVER_ADDR']);
+        $this->assertSame('1234', $_SERVER['SERVER_PORT']);
+        $this->assertSame('localhost:1234', $_SERVER['SERVER_NAME']);
+        $this->assertSame('Skeetr/0.0.2', $_SERVER['SERVER_SOFTWARE']);
     }
 
     public function testGetRemoteInfo()
@@ -61,12 +62,12 @@ class RequestTest extends TestCase
         $r = $this->getRequest('GET');
 
         $expected = array(
-            'addr' => '83.59.53.215', 'port' => '52370'
+            'host' => '127.0.0.1', 'port' => 59996
         );
 
         $this->assertSame($expected, $r->getRemoteInfo());
-        $this->assertSame('83.59.53.215', $_SERVER['REMOTE_ADDR']);
-        $this->assertSame('52370', $_SERVER['REMOTE_PORT']);
+        $this->assertSame('127.0.0.1', $_SERVER['REMOTE_ADDR']);
+        $this->assertSame('59996', $_SERVER['REMOTE_PORT']);
     }
 
     public function testGetHeaders()

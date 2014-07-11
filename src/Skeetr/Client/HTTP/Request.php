@@ -84,12 +84,16 @@ class Request extends Message
             $request->setQueryFields($queryFields);
         }
 
-        if ( isset($data['server']) && is_array($data['server']) ) {
-            $request->setServerInfo($data['server']);
+        if (isset($params['Host']) && isset($params['Proto'])) {
+            $info = parse_url($params['Host']);
+            $info['proto'] = $params['Proto'];
+
+            $request->setServerInfo($info);
         }
 
-        if ( isset($data['remote']) && is_array($data['remote']) ) {
-            $request->setRemoteInfo($data['remote']);
+        if (isset($params['RemoteAddr'])) {
+            $info = parse_url($params['RemoteAddr']);
+            $request->setRemoteInfo($info);
         }
 
         if (strlen($body)) {
@@ -117,10 +121,10 @@ class Request extends Message
      *
      * @param string $info mandatory keys: addr and port
      */
-    public function setRemoteInfo($info)
+    public function setRemoteInfo(array $info)
     {
         $this->remote = $info;
-        $this->setServerGlobal('REMOTE_ADDR', (string) $info['addr']);
+        $this->setServerGlobal('REMOTE_ADDR', (string) $info['host']);
         $this->setServerGlobal('REMOTE_PORT', (string) $info['port']);
     }
 
@@ -129,21 +133,21 @@ class Request extends Message
      *
      * @param string $info mandatory keys: name, addr, port and proto
      */
-    public function setServerInfo($info)
+    public function setServerInfo(array $info)
     {
         $this->server = $info;
 
-        if ( isset($info['name']) && $info['name'] ) $name = (string) $info['name'];
-        else $name = (string) $this->getHeader('Host');
+        if (isset($info['name']) && $info['name']) $name = (string) $info['name'];
+        else $name = sprintf('%s:%s', $info['host'], $info['port']);
 
         $this->setServerGlobal('SERVER_NAME', $name);
 
-        $this->setServerGlobal('SERVER_ADDR', (string) $info['addr']);
+        $this->setServerGlobal('SERVER_ADDR', (string) $info['host']);
         $this->setServerGlobal('SERVER_PORT', (string) $info['port']);
         $this->setServerGlobal('SERVER_PROTOCOL', (string) $info['proto']);
 
         //TODO: Version Server
-        $this->setServerGlobal('SERVER_SOFTWARE', 'Skeetr/0.0.1');
+        $this->setServerGlobal('SERVER_SOFTWARE', 'Skeetr/0.0.2');
     }
 
     /**
